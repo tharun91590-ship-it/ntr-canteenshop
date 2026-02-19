@@ -11,7 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <!-- Load Firebase Auth logic (separate file) -->
-    <script src="firebase-auth.js"></script>
+    <script defer src="firebase-auth.js"></script>
 
     <style>
       * {
@@ -368,13 +368,11 @@
           type="email"
           id="loginEmail"
           placeholder="Email Address"
-          value="tharun91590@gmail.com"
         />
         <input
           type="password"
           id="loginPassword"
           placeholder="Password"
-          value="admin123"
         />
 
         <div class="forgot-password">

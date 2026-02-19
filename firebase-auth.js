@@ -18,15 +18,12 @@ try {
   db = firebase.firestore();
   googleProvider = new firebase.auth.GoogleAuthProvider();
 
-  // Set persistence to SESSION so logout works properly
+  // SESSION persistence: user is logged out when tab closes
   auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
-  // Disable app verification for local testing
-  auth.settings.appVerificationDisabledForTesting = true;
+  // FIX: Removed appVerificationDisabledForTesting — not safe for production
 
-  googleProvider.setCustomParameters({
-    prompt: "select_account",
-  });
+  googleProvider.setCustomParameters({ prompt: "select_account" });
 
   console.log("✅ Firebase initialized successfully");
 } catch (error) {
@@ -34,6 +31,7 @@ try {
 }
 
 // ================= GLOBAL VARIABLES =================
+// FIX: Admin email kept for role-checking only — password never stored here
 const ADMIN_EMAIL = "tharun91590@gmail.com";
 
 // ================= UI HELPER FUNCTIONS =================
@@ -44,9 +42,7 @@ function showError(message) {
     errorEl.style.display = "block";
     const successEl = document.getElementById("successMessage");
     if (successEl) successEl.style.display = "none";
-    setTimeout(() => {
-      errorEl.style.display = "none";
-    }, 3000);
+    setTimeout(() => { errorEl.style.display = "none"; }, 4000);
   } else {
     alert(message);
   }
@@ -59,9 +55,7 @@ function showSuccess(message) {
     successEl.style.display = "block";
     const errorEl = document.getElementById("errorMessage");
     if (errorEl) errorEl.style.display = "none";
-    setTimeout(() => {
-      successEl.style.display = "none";
-    }, 3000);
+    setTimeout(() => { successEl.style.display = "none"; }, 4000);
   } else {
     console.log(message);
   }
@@ -69,15 +63,13 @@ function showSuccess(message) {
 
 function showLoading(show) {
   const loadingEl = document.getElementById("loading");
-  if (loadingEl) {
-    loadingEl.style.display = show ? "block" : "none";
-  }
+  if (loadingEl) loadingEl.style.display = show ? "block" : "none";
 }
 
 function switchTab(tab) {
-  const loginTab = document.getElementById("loginTab");
+  const loginTab    = document.getElementById("loginTab");
   const registerTab = document.getElementById("registerTab");
-  const loginForm = document.getElementById("loginForm");
+  const loginForm   = document.getElementById("loginForm");
   const registerForm = document.getElementById("registerForm");
 
   if (tab === "login") {
@@ -95,16 +87,15 @@ function switchTab(tab) {
 
 function checkPasswordStrength() {
   const password = document.getElementById("regPassword")?.value || "";
-  const strengthBar = document.getElementById("strengthBar");
+  const strengthBar  = document.getElementById("strengthBar");
   const strengthText = document.getElementById("strengthText");
-
   if (!strengthBar || !strengthText) return;
 
   let strength = 0;
-  if (password.length >= 8) strength += 25;
-  if (password.match(/[a-z]+/)) strength += 25;
-  if (password.match(/[A-Z]+/)) strength += 25;
-  if (password.match(/[0-9]+/)) strength += 25;
+  if (password.length >= 8)        strength += 25;
+  if (password.match(/[a-z]+/))    strength += 25;
+  if (password.match(/[A-Z]+/))    strength += 25;
+  if (password.match(/[0-9]+/))    strength += 25;
 
   strengthBar.style.width = strength + "%";
 
@@ -133,30 +124,19 @@ function closeForgotPasswordModal() {
   if (modal) modal.classList.remove("active");
 }
 
+// ================= PASSWORD RESET =================
 function sendResetLink() {
   const email = document.getElementById("resetEmail")?.value.trim();
-
-  if (!email) {
-    showError("Please enter your email");
-    return;
-  }
-
-  if (!auth) {
-    showError("Firebase not initialized");
-    return;
-  }
+  if (!email) { showError("Please enter your email"); return; }
+  if (!auth)  { showError("Firebase not initialized"); return; }
 
   showLoading(true);
-
-  auth
-    .sendPasswordResetEmail(email)
+  auth.sendPasswordResetEmail(email)
     .then(() => {
       showLoading(false);
       showSuccess("Password reset email sent! Check your inbox.");
       closeForgotPasswordModal();
-      if (document.getElementById("resetEmail")) {
-        document.getElementById("resetEmail").value = "";
-      }
+      document.getElementById("resetEmail").value = "";
     })
     .catch((error) => {
       showLoading(false);
@@ -164,148 +144,106 @@ function sendResetLink() {
     });
 }
 
+// ================= REGISTRATION =================
 async function handleRegistration() {
-  if (!auth || !db) {
-    showError("Firebase not initialized");
-    return;
-  }
+  if (!auth || !db) { showError("Firebase not initialized"); return; }
 
-  const name = document.getElementById("regName")?.value.trim();
-  const email = document.getElementById("regEmail")?.value.trim();
-  const phone = document.getElementById("regPhone")?.value.trim();
-  const password = document.getElementById("regPassword")?.value;
+  const name        = document.getElementById("regName")?.value.trim();
+  const email       = document.getElementById("regEmail")?.value.trim();
+  const phone       = document.getElementById("regPhone")?.value.trim();
+  const password    = document.getElementById("regPassword")?.value;
   const confirmPass = document.getElementById("regConfirmPassword")?.value;
-  const department = document.getElementById("regDepartment")?.value;
-  const address = document.getElementById("regAddress")?.value.trim();
-  const preference = document.querySelector('input[name="preference"]:checked');
-  const terms = document.getElementById("terms")?.checked;
+  const department  = document.getElementById("regDepartment")?.value;
+  const address     = document.getElementById("regAddress")?.value.trim();
+  const preference  = document.querySelector('input[name="preference"]:checked');
+  const terms       = document.getElementById("terms")?.checked;
 
+  // Validation
   if (!name || !email || !phone || !password || !confirmPass) {
-    showError("Please fill all required fields");
-    return;
+    showError("Please fill all required fields"); return;
   }
-
   if (!terms) {
-    showError("Please accept Terms & Conditions");
-    return;
+    showError("Please accept Terms & Conditions"); return;
   }
-
   if (!preference) {
-    showError("Please select your food preference");
-    return;
+    showError("Please select your food preference"); return;
   }
-
   if (password !== confirmPass) {
-    showError("Passwords do not match");
-    return;
+    showError("Passwords do not match"); return;
   }
-
   if (password.length < 6) {
-    showError("Password must be at least 6 characters");
-    return;
+    showError("Password must be at least 6 characters"); return;
   }
 
   showLoading(true);
 
   try {
-    const userCredential = await auth.createUserWithEmailAndPassword(
-      email,
-      password,
-    );
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    await user.updateProfile({
-      displayName: name,
-    });
+    await user.updateProfile({ displayName: name });
 
     try {
-      await db
-        .collection("users")
-        .doc(user.uid)
-        .set({
-          uid: user.uid,
-          name: name,
-          email: email,
-          phone: phone,
-          department: department || "Not specified",
-          address: address || "",
-          preference: preference.value,
-          isAdmin: email === ADMIN_EMAIL,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-        });
+      await db.collection("users").doc(user.uid).set({
+        uid:        user.uid,
+        name:       name,
+        email:      email,
+        phone:      phone,
+        department: department || "Not specified",
+        address:    address || "",
+        preference: preference.value,
+        isAdmin:    email === ADMIN_EMAIL,
+        createdAt:  firebase.firestore.FieldValue.serverTimestamp(),
+        lastLogin:  firebase.firestore.FieldValue.serverTimestamp(),
+      });
     } catch (firestoreError) {
-      console.warn(
-        "Firestore write failed, but user is created:",
-        firestoreError,
-      );
+      console.warn("Firestore write failed, but user is created:", firestoreError);
     }
 
     showLoading(false);
     showSuccess("Account created successfully! Redirecting...");
+    setSession(user, name, email === ADMIN_EMAIL);
 
-    sessionStorage.setItem("user_email", email);
-    sessionStorage.setItem("user_name", name);
-    sessionStorage.setItem("user_uid", user.uid);
-    sessionStorage.setItem(
-      "is_admin",
-      email === ADMIN_EMAIL ? "true" : "false",
-    );
-    sessionStorage.setItem("logged_in", "true");
-
-    setTimeout(() => {
-      window.location.href = "canteen.html";
-    }, 1500);
+    setTimeout(() => { window.location.href = "canteen.html"; }, 1500);
   } catch (error) {
     showLoading(false);
     handleAuthError(error);
   }
 }
 
+// ================= LOGIN =================
 async function handleLogin() {
-  const email = document.getElementById("loginEmail")?.value.trim();
+  const email    = document.getElementById("loginEmail")?.value.trim();
   const password = document.getElementById("loginPassword")?.value;
 
   if (!email || !password) {
-    showError("Please enter email and password");
-    return;
+    showError("Please enter email and password"); return;
+  }
+  if (!auth) {
+    showError("Firebase not initialized"); return;
   }
 
-  console.log("Attempting login with:", email);
   showLoading(true);
 
   try {
-    console.log("Calling Firebase signInWithEmailAndPassword...");
-    const userCredential = await auth.signInWithEmailAndPassword(
-      email,
-      password,
-    );
-    console.log("Firebase response received:", userCredential);
-
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
-    console.log("User logged in successfully:", user.email, user.uid);
 
-    try {
-      await db.collection("users").doc(user.uid).update({
-        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-    } catch (firestoreError) {
-      console.warn(
-        "Firestore update failed, but login successful:",
-        firestoreError,
-      );
-    }
+    // Update last login timestamp (non-blocking)
+    db.collection("users").doc(user.uid)
+      .update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() })
+      .catch((e) => console.warn("Firestore lastLogin update failed:", e));
 
     let userName = user.displayName || email.split("@")[0];
-    let isAdmin = email === ADMIN_EMAIL;
+    let isAdmin  = email === ADMIN_EMAIL;
 
+    // Try to get extra user data from Firestore
     try {
       const userDoc = await db.collection("users").doc(user.uid).get();
       if (userDoc.exists) {
         const userData = userDoc.data();
         userName = userData?.name || userName;
-        isAdmin = userData?.isAdmin || isAdmin;
-        console.log("User data from Firestore:", userData);
+        isAdmin  = userData?.isAdmin || isAdmin;
       }
     } catch (firestoreError) {
       console.warn("Firestore read failed, using defaults:", firestoreError);
@@ -313,255 +251,165 @@ async function handleLogin() {
 
     showLoading(false);
     showSuccess("Login successful! Redirecting...");
+    setSession(user, userName, isAdmin);
 
-    sessionStorage.setItem("user_email", email);
-    sessionStorage.setItem("user_name", userName);
-    sessionStorage.setItem("user_uid", user.uid);
-    sessionStorage.setItem("is_admin", isAdmin ? "true" : "false");
-    sessionStorage.setItem("logged_in", "true");
-
-    console.log("Session storage set, redirecting to canteen.html");
-
-    setTimeout(() => {
-      window.location.href = "canteen.html";
-    }, 1500);
+    setTimeout(() => { window.location.href = "canteen.html"; }, 1500);
   } catch (error) {
-    console.error("Login error details:", {
-      code: error.code,
-      message: error.message,
-      stack: error.stack,
-    });
     showLoading(false);
     handleAuthError(error);
   }
 }
 
+// ================= GOOGLE LOGIN =================
 async function googleLogin() {
-  showLoading(true);
-
-  if (
-    window.location.hostname === "127.0.0.1" ||
-    window.location.hostname === "localhost"
-  ) {
-    console.log("Domain not authorized - showing email login option");
-    showLoading(false);
-    showError(
-      "Google Sign-In not available on localhost. Please use email/password login.",
-    );
-    return;
-  }
-
   if (!auth || !db || !googleProvider) {
-    showError("Firebase not initialized");
-    return;
+    showError("Firebase not initialized"); return;
   }
+
+  showLoading(true);
 
   try {
     const result = await auth.signInWithPopup(googleProvider);
-    const user = result.user;
+    const user   = result.user;
 
     try {
       const userDoc = await db.collection("users").doc(user.uid).get();
-
       if (!userDoc.exists) {
-        await db
-          .collection("users")
-          .doc(user.uid)
-          .set({
-            uid: user.uid,
-            name: user.displayName || "Google User",
-            email: user.email,
-            phone: user.phoneNumber || "",
-            department: "Not specified",
-            address: "",
-            preference: "Not specified",
-            isAdmin: user.email === ADMIN_EMAIL,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-          });
-      } else {
-        await db.collection("users").doc(user.uid).update({
-          lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+        await db.collection("users").doc(user.uid).set({
+          uid:        user.uid,
+          name:       user.displayName || "Google User",
+          email:      user.email,
+          phone:      user.phoneNumber || "",
+          department: "Not specified",
+          address:    "",
+          preference: "Not specified",
+          isAdmin:    user.email === ADMIN_EMAIL,
+          createdAt:  firebase.firestore.FieldValue.serverTimestamp(),
+          lastLogin:  firebase.firestore.FieldValue.serverTimestamp(),
         });
+      } else {
+        await db.collection("users").doc(user.uid)
+          .update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
       }
     } catch (firestoreError) {
-      console.warn(
-        "Firestore operation failed, but Google login successful:",
-        firestoreError,
-      );
+      console.warn("Firestore operation failed, but Google login successful:", firestoreError);
     }
 
     showLoading(false);
     showSuccess("Google login successful! Redirecting...");
+    setSession(user, user.displayName || "Google User", user.email === ADMIN_EMAIL);
 
-    sessionStorage.setItem("user_email", user.email);
-    sessionStorage.setItem("user_name", user.displayName || "Google User");
-    sessionStorage.setItem("user_uid", user.uid);
-    sessionStorage.setItem(
-      "is_admin",
-      user.email === ADMIN_EMAIL ? "true" : "false",
-    );
-    sessionStorage.setItem("logged_in", "true");
-
-    setTimeout(() => {
-      window.location.href = "canteen.html";
-    }, 1500);
+    setTimeout(() => { window.location.href = "canteen.html"; }, 1500);
   } catch (error) {
     showLoading(false);
     handleAuthError(error);
   }
 }
 
+// ================= LOGOUT =================
 function logout() {
-  console.log("Logout function called");
-
   if (!auth) {
-    sessionStorage.clear();
-    localStorage.removeItem("canteen_users");
+    clearSession();
     window.location.replace("login.html");
     return;
   }
 
   showLoading(true);
-
-  auth
-    .signOut()
+  auth.signOut()
     .then(() => {
-      console.log("Firebase sign out successful");
-      sessionStorage.clear();
-      localStorage.removeItem("canteen_users");
+      clearSession();
       showLoading(false);
       window.location.replace("login.html");
     })
     .catch((error) => {
       console.error("Logout error:", error);
-      sessionStorage.clear();
-      localStorage.removeItem("canteen_users");
+      clearSession();
       window.location.replace("login.html");
     });
 }
 
+// ================= SESSION HELPERS =================
+// FIX: Centralised session management — no duplication across functions
+function setSession(user, userName, isAdmin) {
+  sessionStorage.setItem("user_email", user.email);
+  sessionStorage.setItem("user_name",  userName);
+  sessionStorage.setItem("user_uid",   user.uid);
+  sessionStorage.setItem("is_admin",   isAdmin ? "true" : "false");
+  sessionStorage.setItem("logged_in",  "true");
+}
+
+function clearSession() {
+  sessionStorage.clear();
+  localStorage.removeItem("canteen_users");
+}
+
+// ================= AUTH STATE LISTENER =================
+// FIX: Simplified logic — only auto-redirect if session is active
 function initAuthStateListener() {
   if (!auth) return;
 
   auth.onAuthStateChanged((user) => {
-    if (user && window.location.pathname.includes("login.html")) {
-      const hasSession = sessionStorage.getItem("logged_in") === "true";
+    const onLoginPage = window.location.pathname.includes("login.html") ||
+                        window.location.pathname === "/" ||
+                        window.location.pathname.endsWith("index.html");
 
+    if (user && onLoginPage) {
+      const hasSession = sessionStorage.getItem("logged_in") === "true";
       if (hasSession) {
-        console.log(
-          "User already logged in with session, redirecting:",
-          user.email,
-        );
-        const isAdmin = user.email === ADMIN_EMAIL;
-        sessionStorage.setItem("user_email", user.email);
-        sessionStorage.setItem(
-          "user_name",
-          user.displayName || user.email.split("@")[0],
-        );
-        sessionStorage.setItem("user_uid", user.uid);
-        sessionStorage.setItem("is_admin", isAdmin ? "true" : "false");
-        sessionStorage.setItem("logged_in", "true");
+        // Already logged in — send to app
         window.location.href = "canteen.html";
       } else {
-        console.log("User authenticated but no session, signing out");
+        // Firebase still has a session but we don't — sign out cleanly
         auth.signOut();
       }
     }
   });
 }
 
+// ================= ERROR HANDLER =================
 function handleAuthError(error) {
-  console.error("Auth error:", error);
+  console.error("Auth error:", error.code, error.message);
 
-  let errorMessage = "";
+  const messages = {
+    "auth/email-already-in-use":   "Email is already registered. Please log in instead.",
+    "auth/invalid-email":          "Invalid email address format.",
+    "auth/weak-password":          "Password is too weak. Use at least 6 characters.",
+    "auth/user-not-found":         "No account found with this email. Please register first.",
+    "auth/wrong-password":         "Incorrect password. Please try again.",
+    "auth/invalid-credential":     "Incorrect email or password. Please try again.",
+    "auth/too-many-requests":      "Too many failed attempts. Please try again later.",
+    "auth/user-disabled":          "This account has been disabled. Contact support.",
+    "auth/popup-closed-by-user":   "Sign-in popup was closed. Please try again.",
+    "auth/popup-blocked":          "Popup was blocked by your browser. Please allow popups.",
+    "auth/unauthorized-domain":    "This domain is not authorised in Firebase. Add it in Firebase Console → Authentication → Authorized Domains.",
+    "permission-denied":           "Database permission error. Please contact support.",
+    "firestore/permission-denied": "Database permission error. Please contact support.",
+  };
 
-  switch (error.code) {
-    case "auth/email-already-in-use":
-      errorMessage =
-        "Email is already registered. Please use a different email or login.";
-      break;
-    case "auth/invalid-email":
-      errorMessage = "Invalid email address format.";
-      break;
-    case "auth/weak-password":
-      errorMessage = "Password is too weak. Please use at least 6 characters.";
-      break;
-    case "auth/user-not-found":
-      errorMessage = "No account found with this email. Please register first.";
-      break;
-    case "auth/wrong-password":
-    case "auth/invalid-credential":
-      errorMessage = "Invalid password. Please try again.";
-      break;
-    case "auth/too-many-requests":
-      errorMessage = "Too many failed attempts. Please try again later.";
-      break;
-    case "auth/user-disabled":
-      errorMessage = "This account has been disabled. Contact support.";
-      break;
-    case "auth/popup-closed-by-user":
-      errorMessage = "Sign-in popup was closed. Please try again.";
-      break;
-    case "auth/popup-blocked":
-      errorMessage = "Popup was blocked by your browser. Please allow popups.";
-      break;
-    case "auth/unauthorized-domain":
-      errorMessage =
-        "Google Sign-In is not available on this domain. Please use email/password login.";
-      break;
-    case "permission-denied":
-    case "firestore/permission-denied":
-      errorMessage = "Database permission error. Please contact support.";
-      break;
-    default:
-      errorMessage = `Authentication failed: ${error.message}`;
-  }
-
-  showError(errorMessage);
+  showError(messages[error.code] || `Authentication failed: ${error.message}`);
 }
 
-function checkAdminUser() {
-  console.log("Checking if admin user exists in Firebase...");
-  console.log("Admin email configured as:", ADMIN_EMAIL);
-
-  if (!auth) {
-    console.log("Auth not initialized yet");
-    return;
-  }
-
-  // This is just for debugging - doesn't actually check if user exists
-  console.log(
-    "To add admin user, go to Firebase Console → Authentication → Users → Add User",
-  );
-  console.log("Email:", ADMIN_EMAIL);
-  console.log("Password: admin123");
-}
-
+// ================= INIT =================
 document.addEventListener("DOMContentLoaded", function () {
   initAuthStateListener();
-  checkAdminUser();
 
-  const passwordField = document.getElementById("loginPassword");
-  if (passwordField) {
-    passwordField.addEventListener("keypress", function (e) {
-      if (e.key === "Enter") handleLogin();
-    });
-  }
-
-  const emailField = document.getElementById("loginEmail");
-  if (emailField) {
-    emailField.value = ADMIN_EMAIL; // Pre-fill admin email
-  }
+  // FIX: Removed hardcoded credential pre-fill
+  // Enter key submits login form
+  document.getElementById("loginPassword")?.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") handleLogin();
+  });
+  document.getElementById("loginEmail")?.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") handleLogin();
+  });
 });
 
-// Make functions globally available
-window.switchTab = switchTab;
-window.checkPasswordStrength = checkPasswordStrength;
+// ================= GLOBAL EXPORTS =================
+window.switchTab              = switchTab;
+window.checkPasswordStrength  = checkPasswordStrength;
 window.showForgotPasswordModal = showForgotPasswordModal;
 window.closeForgotPasswordModal = closeForgotPasswordModal;
-window.sendResetLink = sendResetLink;
-window.handleRegistration = handleRegistration;
-window.handleLogin = handleLogin;
-window.googleLogin = googleLogin;
-window.logout = logout;
+window.sendResetLink          = sendResetLink;
+window.handleRegistration     = handleRegistration;
+window.handleLogin            = handleLogin;
+window.googleLogin            = googleLogin;
+window.logout                 = logout;
