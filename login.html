@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALGOTRON Login & Registration</title>
+
+    <!-- Load Firebase SDKs first -->
+    <!-- Use the compatible SDK versions -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- Load Firebase Auth logic (separate file) -->
+    <script src="firebase-auth.js"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 500px;
+        padding: 40px 35px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        background: white;
+        animation: slideUp 0.5s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      h2 {
+        margin-bottom: 20px;
+        font-size: 32px;
+        font-weight: 700;
+      }
+
+      h2 span {
+        background: linear-gradient(135deg, #e53935, #fb8c00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .tabs {
+        display: flex;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      .tab {
+        flex: 1;
+        padding: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #666;
+        transition: all 0.3s;
+        position: relative;
+      }
+
+      .tab.active {
+        color: #e53935;
+      }
+
+      .tab.active::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(135deg, #e53935, #fb8c00);
+      }
+
+      .form-container {
+        display: none;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .form-container.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateX(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 14px 16px;
+        margin: 8px 0;
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        font-size: 14px;
+        transition: all 0.3s;
+        font-family: "Inter", sans-serif;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #e53935;
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+      }
+
+      button {
+        width: 100%;
+        padding: 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        border: none;
+        margin-top: 15px;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #e53935, #fb8c00);
+        color: white;
+        box-shadow: 0 4px 15px rgba(229, 57, 53, 0.3);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(229, 57, 53, 0.4);
+      }
+
+      .btn-secondary {
+        background: #4285f4;
+        color: white;
+        box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+      }
+
+      .btn-secondary:hover {
+        background: #3367d6;
+        transform: translateY(-2px);
+      }
+
+      .forgot-password {
+        text-align: right;
+        margin: 5px 0;
+      }
+
+      .forgot-password a {
+        color: #666;
+        font-size: 13px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .forgot-password a:hover {
+        color: #e53935;
+        text-decoration: underline;
+      }
+
+      hr {
+        margin: 25px 0;
+        border: none;
+        border-top: 2px solid #f0f0f0;
+      }
+
+      .error-message {
+        color: #e53935;
+        font-size: 14px;
+        margin: 10px 0;
+        display: none;
+        padding: 10px;
+        background: #ffebee;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .success-message {
+        color: #4caf50;
+        font-size: 14px;
+        margin: 10px 0;
+        display: none;
+        padding: 10px;
+        background: #e8f5e9;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .loading {
+        display: none;
+        color: #e53935;
+        margin: 10px 0;
+        font-size: 14px;
+        text-align: center;
+      }
+
+      .loading i {
+        margin-right: 8px;
+      }
+
+      .captcha-box {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        text-align: left;
+      }
+
+      .captcha-question {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .radio-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin: 10px 0;
+      }
+
+      .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .radio-option input[type="radio"] {
+        width: auto;
+        margin: 0;
+      }
+
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 15px 0;
+      }
+
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+      }
+
+      .password-strength {
+        height: 5px;
+        background: #e0e0e0;
+        border-radius: 5px;
+        margin-top: 5px;
+        overflow: hidden;
+      }
+
+      .strength-bar {
+        height: 100%;
+        width: 0;
+        transition:
+          width 0.3s,
+          background 0.3s;
+      }
+
+      .strength-text {
+        font-size: 12px;
+        margin-top: 5px;
+        text-align: right;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 20px;
+        max-width: 400px;
+        width: 90%;
+        animation: slideUp 0.3s ease;
+      }
+
+      .modal-content h3 {
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .close-modal {
+        float: right;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .close-modal:hover {
+        color: #e53935;
+      }
+    </style>
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="container">
+      <h2><span>🍽️ NTR</span> Canteen</h2>
+
+      <div class="error-message" id="errorMessage"></div>
+      <div class="success-message" id="successMessage"></div>
+      <div class="loading" id="loading">
+        <i class="fas fa-spinner fa-spin"></i> Processing...
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('login')" id="loginTab">
+          Login
+        </div>
+        <div class="tab" onclick="switchTab('register')" id="registerTab">
+          Register
+        </div>
+      </div>
+
+      <!-- Login Form -->
+      <div class="form-container active" id="loginForm">
+        <input
+          type="email"
+          id="loginEmail"
+          placeholder="Email Address"
+          value="tharun91590@gmail.com"
+        />
+        <input
+          type="password"
+          id="loginPassword"
+          placeholder="Password"
+          value="admin123"
+        />
+
+        <div class="forgot-password">
+          <a onclick="showForgotPasswordModal()">Forgot Password?</a>
+        </div>
+
+        <button class="btn-primary" onclick="handleLogin()">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+
+        <hr />
+      </div>
+
+      <!-- Registration Form -->
+      <div class="form-container" id="registerForm">
+        <input type="text" id="regName" placeholder="Full Name *" />
+        <input type="email" id="regEmail" placeholder="Email Address *" />
+        <input type="tel" id="regPhone" placeholder="Phone Number *" />
+        <input
+          type="password"
+          id="regPassword"
+          placeholder="Password *"
+          onkeyup="checkPasswordStrength()"
+        />
+
+        <div class="password-strength">
+          <div class="strength-bar" id="strengthBar"></div>
+        </div>
+        <div class="strength-text" id="strengthText">
+          Password strength: None
+        </div>
+
+        <input
+          type="password"
+          id="regConfirmPassword"
+          placeholder="Confirm Password *"
+        />
+
+        <select id="regDepartment">
+          <option value="">Select Department (Optional)</option>
+          <option value="Computer Science">Computer Science</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Business">Business</option>
+          <option value="Arts">Arts</option>
+          <option value="Science">Science</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <textarea
+          id="regAddress"
+          placeholder="Address (Optional)"
+          rows="2"
+        ></textarea>
+
+        <!-- CAPTCHA Question -->
+        <div class="captcha-box">
+          <div class="captcha-question">
+            🤔 What do you prefer in our canteen? *
+          </div>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="preference" value="South Indian" />
+              South Indian
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="preference" value="North Indian" />
+              North Indian
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="preference" value="Chinese" /> Chinese
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="preference" value="Snacks" /> Snacks
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="preference" value="Beverages" />
+              Beverages
+            </label>
+          </div>
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="checkbox-group">
+          <input type="checkbox" id="terms" />
+          <label for="terms">I agree to the Terms & Conditions *</label>
+        </div>
+
+        <button class="btn-primary" onclick="handleRegistration()">
+          <i class="fas fa-user-plus"></i> Create Account
+        </button>
+      </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="modal" id="forgotPasswordModal">
+      <div class="modal-content">
+        <span class="close-modal" onclick="closeForgotPasswordModal()"
+          >&times;</span
+        >
+        <h3>Reset Password</h3>
+        <p style="color: #666; font-size: 14px; margin-bottom: 15px">
+          Enter your email to receive a password reset link
+        </p>
+        <input type="email" id="resetEmail" placeholder="Enter your email" />
+        <button class="btn-primary" onclick="sendResetLink()">
+          Send Reset Link
+        </button>
+      </div>
+    </div>
+
+    <!-- No JavaScript code here - all Firebase logic is in firebase-auth.js -->
+  </body>
+</html>

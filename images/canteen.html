@@ -1,0 +1,3158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neeraj Canteen Shop - The Ultimate Snack Vibe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Load Pyodide early -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <style>
+      html {
+        /* disable native smooth scrolling because we use Lenis for smoother, controlled scrolling */
+        scroll-behavior: auto;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #fff8e1;
+        color: #212121;
+      }
+      :root {
+        --color-primary: #e53935;
+        --color-accent: #fb8c00;
+        --color-neutral: #fff8e1;
+        --color-text: #212121;
+        --color-footer: #3e2723;
+      }
+      .main-gradient-bg {
+        background: linear-gradient(
+          to right,
+          var(--color-primary),
+          var(--color-accent)
+        );
+      }
+      .main-gradient-text {
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        background-image: linear-gradient(
+          to right,
+          var(--color-primary),
+          var(--color-accent)
+        );
+      }
+      .main-color-hover {
+        color: var(--color-primary);
+      }
+      .secondary-gradient-bg {
+        background: linear-gradient(to right, #fb8c00, #e53935);
+      }
+      .gemini-button {
+        background: linear-gradient(45deg, #fb8c00, #e53935, #e53935);
+        background-size: 400% 400%;
+        animation: gradient 10s ease infinite;
+      }
+      .filter-btn.active {
+        background: linear-gradient(
+          to right,
+          var(--color-primary),
+          var(--color-accent)
+        );
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(229, 57, 53, 0.4);
+      }
+      .nav-link {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        color: var(--color-text) !important;
+      }
+      .nav-link:after {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 2px;
+        display: block;
+        margin-top: 5px;
+        right: 0;
+        background: var(--color-primary);
+        transition: width 0.2s ease;
+      }
+      .nav-link:hover:after {
+        width: 100%;
+        left: 0;
+      }
+      .cta-button {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+      .cta-button:hover {
+        transform: scale(1.05) translateY(-3px);
+        box-shadow:
+          0 10px 25px -3px rgba(229, 57, 53, 0.4),
+          0 4px 6px -2px rgba(0, 0, 0, 0.1);
+      }
+      .hero-section {
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+          url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=2070&q=80");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+      }
+      .interactive-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        transform-origin: center center;
+      }
+      @keyframes teamPopAndGlow {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        50% {
+          transform: scale(1.04) rotate(0.5deg);
+          box-shadow:
+            0 20px 40px rgba(255, 69, 0, 0.5),
+            0 0 15px rgba(255, 140, 0, 0.6);
+        }
+        100% {
+          transform: scale(1);
+          box-shadow: 0 15px 30px -5px rgba(229, 57, 53, 0.2);
+        }
+      }
+      .interactive-card:hover {
+        animation: teamPopAndGlow 0.5s ease-out 1;
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 15px 30px -5px rgba(229, 57, 53, 0.2);
+      }
+      .menu-card {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .menu-card:hover {
+        transform: translateY(-10px) scale(1.03);
+        box-shadow: 0 25px 40px rgba(0, 0, 0, 0.1);
+      }
+      .menu-card-wipe {
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+      }
+      .menu-card-wipe::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top right,
+          rgba(229, 57, 53, 0.9),
+          rgba(251, 140, 0, 0.7)
+        );
+        transform: scaleX(0);
+        transform-origin: 0% 50%;
+        transition: transform 0.4s ease-out;
+        z-index: 2;
+      }
+      .menu-card-wipe:hover::before {
+        transform: scaleX(1);
+      }
+      .menu-card-wipe img,
+      .menu-card-wipe .p-6 {
+        position: relative;
+        z-index: 3;
+      }
+      .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(40px);
+        transition:
+          opacity 0.8s ease-out,
+          transform 0.8s ease-out;
+      }
+      .animate-on-scroll.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      #cart-sidebar {
+        transition: transform 0.4s ease-in-out;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: var(--color-neutral);
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: linear-gradient(
+          45deg,
+          var(--color-primary),
+          var(--color-accent)
+        );
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(45deg, #c43230, #d57700);
+      }
+      @keyframes gradient {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+      .marquee {
+        overflow: hidden;
+        position: relative;
+        white-space: nowrap;
+        height: 120px;
+      }
+      .marquee-content {
+        display: inline-flex;
+        animation: marquee 30s linear infinite;
+        height: 100%;
+      }
+      .marquee-content:hover {
+        animation-play-state: paused;
+      }
+      .marquee-content img {
+        width: 150px;
+        height: 80px;
+        margin: 20px 40px;
+        filter: grayscale(0) brightness(1.2);
+        transition: all 0.3s;
+        cursor: pointer;
+      }
+      .marquee-content img:hover {
+        transform: scale(1.1);
+        filter: brightness(1.5);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+      @keyframes marquee {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-50%);
+        }
+      }
+      .floating-action-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 50;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(
+          to right,
+          var(--color-primary),
+          var(--color-accent)
+        );
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 25px rgba(229, 57, 53, 0.4);
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .floating-action-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 15px 30px rgba(229, 57, 53, 0.6);
+      }
+      @media print {
+        body * {
+          visibility: hidden !important;
+        }
+        #invoice-print-area,
+        #invoice-print-area * {
+          visibility: visible !important;
+          background-color: #fff !important;
+          color: #000 !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        #invoice-print-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 20px;
+          min-height: 100vh;
+          display: block !important;
+          font-family: "Inter", sans-serif !important;
+        }
+        #invoice-print-area table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 15px 0;
+        }
+        #invoice-print-area th,
+        #invoice-print-area td {
+          padding: 8px 0;
+          border-bottom: 1px dashed #999;
+        }
+        #invoice-print-area th {
+          text-align: left;
+        }
+        #invoice-print-area .text-right {
+          text-align: right;
+        }
+        #invoice-print-area .border-t-2 {
+          border-top: 2px solid #000;
+        }
+        #bill-modal,
+        #payment-modal,
+        #suggestion-modal,
+        #cart-sidebar,
+        header,
+        footer {
+          display: none !important;
+        }
+      }
+      .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s;
+        background-color: #fff;
+      }
+      .form-input:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.2);
+      }
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--color-text);
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .required:after {
+        content: " *";
+        color: var(--color-primary);
+      }
+    </style>
+  </head>
+
+  <body class="text-['var(--color-text)']">
+    <div id="invoice-print-area" style="display: none"></div>
+
+    <div class="floating-action-btn" id="quick-order-btn">
+      <i class="fas fa-bolt text-xl"></i>
+    </div>
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+      <nav
+        class="container mx-auto px-6 py-4 flex justify-between items-center"
+      >
+        <h1 class="text-3xl font-bold main-gradient-text tracking-wider">
+          NTR Canteen Shop
+        </h1>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#home" class="font-semibold nav-link">Home</a>
+          <a href="#menu" class="font-semibold nav-link">Menu</a>
+          <a href="#team" class="font-semibold nav-link">Team</a>
+          <a href="#reviews" class="font-semibold nav-link">Reviews</a>
+          <a href="#contact" class="font-semibold nav-link">Contact</a>
+          <button id="open-dashboard" class="font-semibold nav-link">
+            Dashboard
+          </button>
+        </div>
+        <div class="flex items-center">
+          <button
+            id="cart-button"
+            class="relative text-['var(--color-text)'] main-color-hover transition-colors duration-300"
+          >
+            <i class="fas fa-shopping-cart text-2xl"></i>
+            <span
+              id="cart-count"
+              class="absolute -top-2 -right-2 bg-['var(--color-primary)'] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+              >0</span
+            >
+          </button>
+          <button id="login-btn" class="ml-4 text-sm font-semibold nav-link">
+            Login
+          </button>
+          <button
+            id="logout-btn"
+            class="ml-4 text-sm font-semibold nav-link hidden"
+          >
+            Logout
+          </button>
+          <button
+            id="menu-btn"
+            class="ml-4 md:hidden text-['var(--color-text)'] focus:outline-none"
+          >
+            <i class="fas fa-bars text-2xl"></i>
+          </button>
+        </div>
+      </nav>
+      <div id="mobile-menu" class="hidden md:hidden bg-white/90">
+        <a
+          href="#home"
+          class="block py-2 px-4 text-sm hover:bg-gray-100 text-['var(--color-text)']"
+          >Home</a
+        >
+        <a
+          href="#menu"
+          class="block py-2 px-4 text-sm hover:bg-gray-100 text-['var(--color-text)']"
+          >Menu</a
+        >
+        <a
+          href="#team"
+          class="block py-2 px-4 text-sm hover:bg-gray-100 text-['var(--color-text)']"
+          >Team</a
+        >
+        <a
+          href="#reviews"
+          class="block py-2 px-4 text-sm hover:bg-gray-100 text-['var(--color-text)']"
+          >Reviews</a
+        >
+        <a
+          href="#contact"
+          class="block py-2 px-4 text-sm hover:bg-gray-100 text-['var(--color-text)']"
+          >Contact</a
+        >
+        <button
+          id="open-dashboard-mobile"
+          class="block w-full text-left py-2 px-4 text-sm hover:bg-gray-100 text-['var(--color-text)']"
+        >
+          Dashboard
+        </button>
+      </div>
+    </header>
+
+    <section
+      id="home"
+      class="hero-section relative"
+      style="padding-top: 6rem; padding-bottom: 9rem"
+    >
+      <div class="container mx-auto px-6 text-center animate-on-scroll">
+        <h2
+          class="text-6xl md:text-8xl font-extrabold leading-tight mb-2 text-white"
+        >
+          The Ultimate <span class="main-gradient-text">Snack Vibe</span> 🥨
+        </h2>
+        <h3 class="text-2xl mb-10 max-w-3xl mx-auto text-gray-200">
+          <i>Taste the energy. Incredible food, lightning-fast service.</i>
+        </h3>
+        <a
+          href="#menu"
+          class="main-gradient-bg text-white font-bold py-4 px-12 rounded-full text-lg cta-button inline-block"
+          >Order Now</a
+        >
+      </div>
+    </section>
+
+    <section id="why-us" class="py-24" style="background-color: white">
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-16 animate-on-scroll">
+          <h2
+            class="text-4xl md:text-5xl font-bold"
+            style="color: var(--color-text)"
+          >
+            Why You'll Love Us
+          </h2>
+          <p class="mt-3 text-lg" style="color: #616161">
+            We're more than just a canteen.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div
+            class="text-center p-8 rounded-2xl shadow-lg animate-on-scroll interactive-card"
+            style="
+              background-color: var(--color-neutral);
+              transition-delay: 100ms;
+            "
+          >
+            <div class="text-4xl main-gradient-text mb-4 inline-block">
+              <i class="fas fa-leaf"></i>
+            </div>
+            <h3
+              class="text-2xl font-bold mb-3"
+              style="color: var(--color-text)"
+            >
+              Fresh & Quality
+            </h3>
+            <p style="color: #616161">
+              We source the freshest local ingredients to ensure every bite is
+              packed with quality and flavor.
+            </p>
+          </div>
+          <div
+            class="text-center p-8 rounded-2xl shadow-lg animate-on-scroll interactive-card"
+            style="
+              background-color: var(--color-neutral);
+              transition-delay: 200ms;
+            "
+          >
+            <div class="text-4xl main-gradient-text mb-4 inline-block">
+              <i class="fas fa-bolt"></i>
+            </div>
+            <h3
+              class="text-2xl font-bold mb-3"
+              style="color: var(--color-text)"
+            >
+              Campus Speed
+            </h3>
+            <p style="color: #616161">
+              In a hurry? Our efficient team ensures you get your delicious food
+              fast, without the wait.
+            </p>
+          </div>
+          <div
+            class="text-center p-8 rounded-2xl shadow-lg animate-on-scroll interactive-card"
+            style="
+              background-color: var(--color-neutral);
+              transition-delay: 300ms;
+            "
+          >
+            <div class="text-4xl main-gradient-text mb-4 inline-block">
+              <i class="fas fa-piggy-bank"></i>
+            </div>
+            <h3
+              class="text-2xl font-bold mb-3"
+              style="color: var(--color-text)"
+            >
+              Great Value
+            </h3>
+            <p style="color: #616161">
+              Enjoy mouth-watering meals that are heavy on taste but light on
+              your wallet.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      id="menu"
+      class="py-24"
+      style="background-color: var(--color-neutral)"
+    >
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-16 animate-on-scroll">
+          <h2
+            class="text-4xl md:text-5xl font-bold"
+            style="color: var(--color-text)"
+          >
+            Our Delicious Offerings
+          </h2>
+          <p class="mt-3 text-lg" style="color: #616161">
+            Ready to be served, fresh and hot!
+          </p>
+        </div>
+        <div
+          id="filter-buttons"
+          class="flex justify-center flex-wrap gap-4 mb-10 animate-on-scroll"
+        >
+          <button
+            class="filter-btn active font-semibold py-2 px-6 rounded-full border border-gray-300 transition-all duration-300"
+            style="color: var(--color-text)"
+            data-category="all"
+          >
+            All
+          </button>
+          <button
+            class="filter-btn font-semibold py-2 px-6 rounded-full border border-gray-300 hover:border-['var(--color-primary)'] hover:text-['var(--color-primary)'] transition-all duration-300"
+            style="color: var(--color-text)"
+            data-category="beverages"
+          >
+            Beverages
+          </button>
+          <button
+            class="filter-btn font-semibold py-2 px-6 rounded-full border border-gray-300 hover:border-['var(--color-primary)'] hover:text-['var(--color-primary)'] transition-all duration-300"
+            style="color: var(--color-text)"
+            data-category="snacks"
+          >
+            Snacks
+          </button>
+          <button
+            class="filter-btn font-semibold py-2 px-6 rounded-full border border-gray-300 hover:border-['var(--color-primary)'] hover:text-['var(--color-primary)'] transition-all duration-300"
+            style="color: var(--color-text)"
+            data-category="desserts"
+          >
+            Desserts
+          </button>
+        </div>
+        <div
+          id="menu-cards-container"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+        ></div>
+      </div>
+    </section>
+
+    <section id="team" class="py-24" style="background-color: white">
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-16 animate-on-scroll">
+          <h2
+            class="text-4xl md:text-5xl font-bold"
+            style="color: var(--color-text)"
+          >
+            Meet Our Dedicated Team
+          </h2>
+          <p class="mt-3 text-lg" style="color: #616161">
+            The faces behind your delicious meals.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div
+            class="text-center p-6 rounded-xl shadow-lg animate-on-scroll interactive-card"
+            style="
+              background-color: var(--color-neutral);
+              transition-delay: 100ms;
+            "
+          >
+            <img
+              src="neeraj.png"
+              alt="Neeraj Rathi "
+              class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-['var(--color-primary)']"
+            />
+            <h3 class="text-2xl font-bold" style="color: var(--color-text)">
+              Neeraj Rathi
+            </h3>
+            <p class="font-semibold mb-2" style="color: var(--color-primary)">
+              Founder
+            </p>
+            <p class="text-sm" style="color: #616161">
+              Ensures every recipe meets the highest standard of homely taste
+              and quality.
+            </p>
+          </div>
+          <div
+            class="text-center p-6 rounded-xl shadow-lg animate-on-scroll interactive-card"
+            style="
+              background-color: var(--color-neutral);
+              transition-delay: 200ms;
+            "
+          >
+            <img
+              src="images/tharun1.jpeg"
+              alt="Tharun Operations"
+              class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-['var(--color-accent)']"
+            />
+            <h3 class="text-2xl font-bold" style="color: var(--color-text)">
+              Tharun
+            </h3>
+            <p class="font-semibold mb-2" style="color: var(--color-accent)">
+              Lead Operations Manager
+            </p>
+            <p class="text-sm" style="color: #616161">
+              Manages day-to-day services and ensures our lightning-fast campus
+              speed.
+            </p>
+          </div>
+          <div
+            class="text-center p-6 rounded-xl shadow-lg animate-on-scroll interactive-card"
+            style="
+              background-color: var(--color-neutral);
+              transition-delay: 300ms;
+            "
+          >
+            <img
+              src="images1/1762191658356.jpg"
+              alt="Raj Kumar Service"
+              class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 border-['var(--color-text)']"
+            />
+            <h3 class="text-2xl font-bold" style="color: var(--color-text)">
+              Raj Kumar
+            </h3>
+            <p class="font-semibold mb-2" style="color: var(--color-text)">
+              Customer Service Lead
+            </p>
+            <p class="text-sm" style="color: #616161">
+              The face of the shop, ensuring every customer leaves satisfied and
+              smiling.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reviews" class="py-24 secondary-gradient-bg text-white">
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-16 animate-on-scroll">
+          <h2 class="text-4xl md:text-5xl font-bold">What Our Customers Say</h2>
+          <p class="text-gray-200 mt-3 text-lg">
+            Real feedback from our satisfied patrons.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div
+            class="p-8 bg-black/10 backdrop-blur-sm rounded-xl shadow-2xl border border-white/20 animate-on-scroll"
+            style="transition-delay: 100ms"
+          >
+            <i class="fas fa-quote-left text-3xl main-gradient-text mb-4"></i>
+            <p class="text-gray-100 italic mb-4">
+              "The best canteen food on campus! The Paneer Roll is consistently
+              amazing and the service is super fast during rush hour."
+            </p>
+            <p class="font-bold text-lg text-white">— Alisha M.</p>
+            <small class="text-gray-300">Student, Regular Customer</small>
+          </div>
+          <div
+            class="p-8 bg-black/10 backdrop-blur-sm rounded-xl shadow-2xl border border-white/20 animate-on-scroll"
+            style="transition-delay: 200ms"
+          >
+            <i class="fas fa-quote-left text-3xl main-gradient-text mb-4"></i>
+            <p class="text-gray-100 italic mb-4">
+              "Great value for money. I love the Masala Chai and Samosa
+              combo—it's the perfect affordable evening snack."
+            </p>
+            <p class="font-bold text-lg text-white">— Vikram P.</p>
+            <small class="text-gray-300">Faculty Member</small>
+          </div>
+          <div
+            class="p-8 bg-black/10 backdrop-blur-sm rounded-xl shadow-2xl border border-white/20 animate-on-scroll"
+            style="transition-delay: 300ms"
+          >
+            <i class="fas fa-quote-left text-3xl main-gradient-text mb-4"></i>
+            <p class="text-gray-100 italic mb-4">
+              "The new online system is fantastic. Ordering ahead saves me so
+              much time. Five stars for efficiency and taste!"
+            </p>
+            <p class="font-bold text-lg text-white">— Sneha R.</p>
+            <small class="text-gray-300">Part-Time Employee</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sponsors" class="py-12" style="background-color: white">
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-8 animate-on-scroll">
+          <h2
+            class="text-4xl md:text-5xl font-bold"
+            style="color: var(--color-text)"
+          >
+            Community & Partners
+          </h2>
+          <p class="mt-3 text-lg" style="color: #616161">
+            Proudly supported by our amazing partners.
+          </p>
+        </div>
+        <div class="marquee animate-on-scroll">
+          <div class="marquee-content">
+            <img src="images/amul.jpg" alt="Local Dairy Sponsor" />
+            <img src="IMG-20251103-WA0022.jpg" alt="Tech Solutions Sponsor" />
+            <img src="IMG-20251103-WA0023.jpg" alt="Eco Packaging Sponsor" />
+            <img
+              src="IMG-20251103-WA0024.jpg"
+              alt="Beverage Distributor Sponsor"
+            />
+            <img src="IMG-20251103-WA0025.jpg" alt="Clean Water Sponsor" />
+            <img src="IMG-20251103-WA0026.jpg" alt="Local Dairy Sponsor" />
+            <img src="IMG-20251103-WA0027.jpg" alt="Tech Solutions Sponsor" />
+            <img src="IMG-20251103-WA0028.jpg" alt="Eco Packaging Sponsor" />
+            <img
+              src="IMG-20251103-WA0029.jpg"
+              alt="Beverage Distributor Sponsor"
+            />
+            <img src="IMG-20251103-WA0030.jpg" alt="Clean Water Sponsor" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      id="contact"
+      class="py-24"
+      style="background-color: var(--color-neutral)"
+    >
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-16 animate-on-scroll">
+          <h2
+            class="text-4xl md:text-5xl font-bold"
+            style="color: var(--color-text)"
+          >
+            Visit & Contact Us
+          </h2>
+          <p class="mt-3 text-lg" style="color: #616161">
+            Find our location and reach out for catering or large orders.
+          </p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div class="p-8 bg-white rounded-xl shadow-lg animate-on-scroll">
+            <h3 class="text-2xl font-bold mb-4 main-gradient-text">
+              Get in Touch
+            </h3>
+            <div class="space-y-6" style="color: #4a4a4a">
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-map-marker-alt text-2xl main-color-hover"></i>
+                <div>
+                  <p class="font-semibold">Address:</p>
+                  <p>
+                    Ground Floor, Main Campus Building, Central University, City
+                    - 123456
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-phone-alt text-2xl main-color-hover"></i>
+                <div>
+                  <p class="font-semibold">Phone:</p>
+                  <p>+91 98765 43210 (For quick orders & inquiries)</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <i class="fas fa-envelope text-2xl main-color-hover"></i>
+                <div>
+                  <p class="font-semibold">Email:</p>
+                  <p>info@neerajcanteen.com</p>
+                </div>
+              </div>
+            </div>
+            <a
+              href="#menu"
+              class="main-gradient-bg text-white font-bold py-3 px-8 rounded-full text-lg cta-button inline-block mt-8"
+              >Start Your Order</a
+            >
+          </div>
+          <div
+            class="rounded-xl overflow-hidden shadow-lg border-4 border-white animate-on-scroll"
+            style="transition-delay: 200ms"
+          >
+            <iframe
+              src="https://maps.google.com/maps?q=campus canteen&t=&z=13&ie=UTF8&iwloc=&output=embed"
+              width="100%"
+              height="450"
+              style="border: 0"
+              allowfullscreen=""
+              loading="lazy"
+            ></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer
+      class="text-white py-16"
+      style="background-color: var(--color-footer)"
+    >
+      <div class="container mx-auto px-6 text-center">
+        <h2 class="text-3xl font-bold mb-4">NTR Canteen Shop</h2>
+        <p class="text-gray-400 mb-2">Main Campus Building, Ground Floor.</p>
+        <p class="text-gray-400 mb-6">
+          Open <span class="font-bold text-white">Mon-Sat, 9 AM - 6 PM</span>
+        </p>
+        <p class="text-sm text-gray-500">
+          © 2025 NTR Canteen Shop. All Rights Reserved.
+        </p>
+      </div>
+    </footer>
+
+    <div
+      id="cart-sidebar"
+      class="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl transform translate-x-full z-[60] flex flex-col"
+    >
+      <div class="flex justify-between items-center p-4 border-b">
+        <h2 class="text-2xl font-bold" style="color: var(--color-text)">
+          Your Order
+        </h2>
+        <button
+          id="close-cart"
+          class="text-gray-600 hover:text-['var(--color-primary)']"
+        >
+          <i class="fas fa-times text-2xl"></i>
+        </button>
+      </div>
+      <div
+        id="cart-items"
+        class="flex-grow p-4 overflow-y-auto custom-scrollbar"
+      >
+        <div id="empty-cart-message" class="text-center text-gray-500 mt-20">
+          <i class="fas fa-shopping-basket text-4xl mb-4"></i>
+          <p>Your cart is empty!</p>
+        </div>
+      </div>
+      <div class="p-4 border-t" style="background-color: var(--color-neutral)">
+        <div
+          class="flex justify-between items-center font-bold text-xl mb-4"
+          style="color: var(--color-text)"
+        >
+          <span>Total:</span><span id="cart-total">₹0.00</span>
+        </div>
+        <button
+          id="gemini-suggest-btn"
+          class="w-full mb-2 gemini-button text-white font-bold py-3 rounded-lg cta-button disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled
+        >
+          ✨ Suggest a Combo
+        </button>
+        <button
+          id="checkout-btn"
+          class="w-full main-gradient-bg text-white font-bold py-3 rounded-lg cta-button disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled
+        >
+          Proceed to Payment
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="customer-details-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] hidden"
+    >
+      <div
+        class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto custom-scrollbar"
+      >
+        <h2 class="text-2xl font-bold mb-6 main-gradient-text text-center">
+          Customer Details
+        </h2>
+        <form id="customer-details-form">
+          <div class="form-group">
+            <label class="form-label required">Full Name</label>
+            <input type="text" class="form-input" id="customer-name" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Phone Number</label>
+            <input type="tel" class="form-input" id="customer-phone" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label required">Email Address</label>
+            <input
+              type="email"
+              class="form-input"
+              id="customer-email"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Student/Faculty ID</label>
+            <input type="text" class="form-input" id="customer-id" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <select class="form-input" id="customer-department">
+              <option value="">Select Department</option>
+              <option value="Computer Science">Computer Science</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Business">Business</option>
+              <option value="Arts">Arts</option>
+              <option value="Science">Science</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Special Instructions (Optional)</label>
+            <textarea
+              class="form-input"
+              id="customer-instructions"
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="flex gap-4 mt-6">
+            <button
+              type="button"
+              id="close-customer-modal"
+              class="flex-1 text-white font-bold py-3 px-4 rounded-lg cta-button"
+              style="background-color: #616161"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="flex-1 main-gradient-bg text-white font-bold py-3 px-4 rounded-lg cta-button"
+            >
+              Continue to Payment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      id="payment-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[75] hidden"
+    >
+      <div
+        class="p-8 rounded-xl shadow-2xl w-full max-w-sm mx-4 text-center"
+        style="background-color: white"
+      >
+        <h2 class="text-2xl font-bold mb-6 main-gradient-text">
+          Select Payment Method
+        </h2>
+        <div id="payment-options" class="space-y-4">
+          <button
+            class="payment-option-btn w-full text-white font-bold py-3 rounded-lg cta-button"
+            style="background-color: #388e3c"
+            data-payment="Cash"
+          >
+            <i class="fas fa-money-bill-wave mr-2"></i> Pay with Cash
+          </button>
+          <button
+            class="payment-option-btn w-full text-white font-bold py-3 rounded-lg cta-button"
+            style="background-color: #1976d2"
+            data-payment="UPI"
+          >
+            <i class="fas fa-mobile-alt mr-2"></i> Pay with UPI
+          </button>
+          <button
+            class="payment-option-btn w-full text-white font-bold py-3 rounded-lg cta-button"
+            style="background-color: #ef6c00"
+            data-payment="Credit Card"
+          >
+            <i class="fas fa-credit-card mr-2"></i> Pay with Card
+          </button>
+        </div>
+        <button
+          id="close-payment-modal"
+          class="text-gray-500 hover:text-['var(--color-primary)'] mt-6 text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="bill-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] hidden"
+    >
+      <div
+        class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md mx-4"
+        style="color: var(--color-text)"
+      >
+        <div class="text-center border-b pb-4 mb-4">
+          <h2 class="text-2xl font-bold">Invoice</h2>
+          <p class="text-gray-600">Neeraj Canteen Shop</p>
+          <p id="bill-date" class="text-sm text-gray-500"></p>
+          <p
+            id="bill-payment-method"
+            class="text-sm font-semibold main-color-hover mt-1"
+          ></p>
+        </div>
+        <div
+          id="bill-items"
+          class="mb-4 max-h-60 overflow-y-auto custom-scrollbar"
+        ></div>
+        <div class="border-t pt-4">
+          <div class="flex justify-between font-bold text-xl">
+            <span>Grand Total:</span><span id="bill-total"></span>
+          </div>
+        </div>
+        <div class="text-center mt-6">
+          <button
+            id="print-bill-btn"
+            class="main-gradient-bg text-white font-bold py-2 px-6 rounded-lg cta-button mb-3"
+          >
+            <i class="fas fa-print mr-2"></i> Print Bill
+          </button>
+          <button
+            id="export-order-btn"
+            class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg cta-button mb-3"
+          >
+            <i class="fas fa-file-export mr-2"></i> Export to Excel
+          </button>
+          <p class="text-sm text-gray-500 mb-4">Thank you for your order!</p>
+          <button
+            id="close-bill-modal"
+            class="text-white font-bold py-2 px-6 rounded-lg cta-button"
+            style="background-color: var(--color-text)"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="suggestion-modal"
+      class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden"
+    >
+      <div
+        class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4 text-center transform transition-all scale-95 opacity-0"
+        id="suggestion-modal-content"
+        style="color: var(--color-text)"
+      >
+        <div id="suggestion-loading" class="hidden">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2"
+            style="
+              border-color: var(--color-text);
+              margin-left: auto;
+              margin-right: auto;
+            "
+          ></div>
+          <p class="mt-4 text-gray-600">✨ Thinking of a perfect combo...</p>
+        </div>
+        <div id="suggestion-result">
+          <h3 class="text-2xl font-bold mb-2 main-gradient-text">
+            AI Suggestion!
+          </h3>
+          <p class="text-gray-600 mb-4">
+            How about adding a <strong id="suggestion-item-name">...</strong>?
+          </p>
+          <img
+            id="suggestion-item-image"
+            src=""
+            class="w-32 h-32 rounded-lg object-cover mx-auto mb-4 shadow-lg"
+          />
+          <p id="suggestion-reason" class="text-sm italic text-gray-500 mb-6">
+            "..."
+          </p>
+          <div class="flex gap-2">
+            <button
+              id="add-suggestion-btn"
+              class="flex-1 text-white font-bold py-2 px-4 rounded-lg cta-button"
+              style="background-color: #388e3c"
+            >
+              Add to Cart
+            </button>
+            <button
+              id="close-suggestion-modal"
+              class="flex-1 text-white font-bold py-2 px-4 rounded-lg cta-button"
+              style="background-color: #616161"
+            >
+              No, thanks
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="dashboard-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[85] hidden"
+    >
+      <div
+        class="bg-white w-full max-w-5xl mx-4 rounded-xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto custom-scrollbar"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold main-gradient-text">
+            End of Day Dashboard
+          </h2>
+          <div class="flex items-center gap-2">
+            <button
+              id="inspect-orders-btn"
+              class="text-sm bg-gray-200 px-3 py-1 rounded text-gray-700 hover:bg-gray-300"
+              title="Print saved orders to console"
+            >
+              Inspect Orders
+            </button>
+            <button
+              id="import-excel-btn"
+              class="text-sm bg-green-700 text-white px-3 py-1 rounded hidden"
+              title="Import orders from Excel"
+            >
+              Import Excel
+            </button>
+            <input
+              id="import-excel-input"
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              class="hidden"
+            />
+            <button
+              id="close-dashboard"
+              class="text-gray-600 hover:text-['var(--color-primary)']"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 mb-4">
+          <label class="inline-flex items-center gap-2">
+            <input type="checkbox" id="dashboard-today-only" class="h-4 w-4" />
+            <span class="text-sm text-gray-700">Today only</span>
+          </label>
+          <button
+            id="refresh-dashboard"
+            class="main-gradient-bg text-white font-semibold py-2 px-4 rounded-lg cta-button"
+          >
+            <i class="fas fa-rotate-right mr-2"></i>Refresh
+          </button>
+        </div>
+        <div
+          id="dashboard-loading"
+          class="flex items-center gap-3 text-gray-600 hidden"
+        >
+          <div
+            class="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"
+          ></div>
+          <span>Loading analytics (pandas, numpy, matplotlib)...</span>
+        </div>
+        <div
+          id="dashboard-error"
+          class="hidden text-red-600 text-sm mb-3"
+        ></div>
+        <div id="dashboard-content" class="space-y-6 hidden">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="text-gray-500 text-sm">Total Orders</p>
+              <p id="kpi-total-orders" class="text-2xl font-bold"></p>
+            </div>
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="text-gray-500 text-sm">Total Revenue</p>
+              <p id="kpi-total-revenue" class="text-2xl font-bold"></p>
+            </div>
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="text-gray-500 text-sm">Avg Ticket Size</p>
+              <p id="kpi-avg-ticket" class="text-2xl font-bold"></p>
+            </div>
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="text-gray-500 text-sm">Unique Customers (by phone)</p>
+              <p id="kpi-unique-customers" class="text-2xl font-bold"></p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="font-semibold mb-2">Orders by Status</p>
+              <img id="chart-status" class="w-full rounded" />
+            </div>
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="font-semibold mb-2">Orders by Payment Method</p>
+              <img id="chart-payment" class="w-full rounded" />
+            </div>
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="font-semibold mb-2">Departments (Top)</p>
+              <img id="chart-department" class="w-full rounded" />
+            </div>
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="font-semibold mb-2">Top Items</p>
+              <img id="chart-top-items" class="w-full rounded" />
+            </div>
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="font-semibold mb-2">
+                Order Value Distribution (Histogram)
+              </p>
+              <img id="chart-hist" class="w-full rounded" />
+            </div>
+            <div class="p-4 rounded-lg shadow bg-white">
+              <p class="font-semibold mb-2">Departments (Pie)</p>
+              <img id="chart-department-pie" class="w-full rounded" />
+            </div>
+          </div>
+          <div class="p-4 rounded-lg shadow bg-white">
+            <div class="flex items-center justify-between mb-3">
+              <p class="font-semibold">Orders</p>
+              <button
+                id="download-dashboard-csv"
+                class="text-sm bg-gray-800 text-white px-3 py-1.5 rounded"
+              >
+                Download CSV
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="text-left text-gray-600">
+                  <tr>
+                    <th class="py-2 pr-4">Status</th>
+                    <th class="py-2 pr-4">Order Date</th>
+                    <th class="py-2 pr-4">Payment</th>
+                    <th class="py-2 pr-4">Customer</th>
+                    <th class="py-2 pr-4">Phone</th>
+                    <th class="py-2 pr-4">Email</th>
+                    <th class="py-2 pr-4">ID</th>
+                    <th class="py-2 pr-4">Department</th>
+                    <th class="py-2 pr-4">Special Instruction</th>
+                    <th class="py-2 pr-4">Items</th>
+                    <th class="py-2 pr-4">Edit</th>
+                    <th class="py-2 pr-4">Delete</th>
+                    <th class="py-2 pr-4">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="orders-table-body" class="align-top"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Edit Modal -->
+    <div
+      id="order-edit-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90] hidden"
+    >
+      <div
+        class="bg-white w-full max-w-3xl mx-4 rounded-xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto custom-scrollbar"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-bold">Edit Order</h3>
+          <button
+            id="close-order-edit"
+            class="text-gray-600 hover:text-['var(--color-primary)']"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="order-edit-form">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">Customer Name</label>
+              <input id="edit-customer-name" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">Phone</label>
+              <input id="edit-customer-phone" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">Email</label>
+              <input id="edit-customer-email" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">Student/Faculty ID</label>
+              <input id="edit-customer-id" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">Department</label>
+              <input id="edit-customer-department" class="form-input" />
+            </div>
+            <div>
+              <label class="form-label">Special Instructions</label>
+              <input id="edit-customer-instructions" class="form-input" />
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <h4 class="font-semibold mb-2">Items</h4>
+            <div id="edit-items-list" class="space-y-2"></div>
+            <p class="text-sm text-gray-500 mt-2">
+              Edit quantities or remove items. Name and unit price are readonly.
+            </p>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button
+              type="button"
+              id="save-order-edit"
+              class="main-gradient-bg text-white font-bold py-2 px-4 rounded-lg"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              id="cancel-order-edit"
+              class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg"
+            >
+              Cancel
+            </button>
+          </div>
+          <input type="hidden" id="edit-order-orig-index" />
+        </form>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Initialize Lenis smooth scroller with sensible defaults
+        const lenis = new Lenis({
+          duration: 1.0,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          orientation: "vertical",
+          gestureOrientation: "vertical",
+        });
+        function raf(time) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Intercept in-page anchor clicks and use Lenis to scroll with header offset
+        function scrollToElementWithOffset(targetEl) {
+          if (!targetEl) return;
+          const header = document.querySelector("header");
+          const headerHeight = header ? header.offsetHeight : 0;
+          const rect = targetEl.getBoundingClientRect();
+          const y = rect.top + window.scrollY - headerHeight - 8; // small gap
+          // lenis.scrollTo accepts a numeric y position
+          lenis.scrollTo(y);
+          // update hash without jumping
+          try {
+            history.replaceState &&
+              history.replaceState(null, "", "#" + targetEl.id);
+          } catch (e) {}
+          // maintain focus for accessibility
+          setTimeout(() => {
+            try {
+              targetEl.setAttribute("tabindex", "-1");
+              targetEl.focus({ preventScroll: true });
+            } catch (e) {}
+          }, 450);
+        }
+
+        document.addEventListener("click", (ev) => {
+          const a = ev.target.closest('a[href^="#"]');
+          if (!a) return;
+          const href = a.getAttribute("href");
+          if (!href || href === "#") return;
+          const id = href.slice(1);
+          const target = document.getElementById(id);
+          if (target) {
+            ev.preventDefault();
+            // close mobile menu if open
+            const mobileMenu = document.getElementById("mobile-menu");
+            if (mobileMenu && !mobileMenu.classList.contains("hidden")) {
+              mobileMenu.classList.add("hidden");
+            }
+            scrollToElementWithOffset(target);
+          }
+        });
+
+        const menuItems = [
+          {
+            id: 1,
+            name: "Samosa",
+            price: 20.0,
+            category: "snacks",
+            image:
+              "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1000&q=80",
+          },
+          {
+            id: 2,
+            name: "Burger",
+            price: 99.0,
+            category: "snacks",
+            image:
+              "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1000&q=80",
+          },
+          {
+            id: 3,
+            name: "Pizza Slice",
+            price: 150.0,
+            category: "snacks",
+            image:
+              "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1000&q=80",
+          },
+          {
+            id: 5,
+            name: "Veg Sandwich",
+            price: 60.0,
+            category: "snacks",
+            image: "IMG-20251103-WA0048.jpg",
+          },
+          {
+            id: 7,
+            name: "Paneer Roll",
+            price: 70.0,
+            category: "snacks",
+            image: "IMG-20251103-WA0043.jpg",
+          },
+          {
+            id: 9,
+            name: "Cauliflower Pakoda",
+            price: 80.0,
+            category: "snacks",
+            image: "IMG-20251103-WA0042.jpg",
+          },
+          {
+            id: 11,
+            name: "Veg Frankie",
+            price: 75.0,
+            category: "snacks",
+            image: "IMG-20251103-WA0044.jpg",
+          },
+          {
+            id: 14,
+            name: "Puffs (Veg)",
+            price: 35.0,
+            category: "snacks",
+            image: "IMG-20251103-WA0046.jpg",
+          },
+          {
+            id: 15,
+            name: "Bajji and Bonda",
+            price: 65.0,
+            category: "snacks",
+            image: "IMG-20251103-WA0041.jpg",
+          },
+          {
+            id: 16,
+            name: "Cutlet (Potato)",
+            price: 40.0,
+            category: "snacks",
+            image: "IMG-20251103-WA0038.jpg",
+          },
+          {
+            id: 17,
+            name: "French Fries",
+            price: 59.0,
+            category: "snacks",
+            image: "IMG-20251103-WA0039.jpg",
+          },
+          {
+            id: 4,
+            name: "Fresh Juice (Seasonal)",
+            price: 50.0,
+            category: "beverages",
+            image: "IMG-20251103-WA0037.jpg",
+          },
+          {
+            id: 6,
+            name: "Tea (Masala)",
+            price: 25.0,
+            category: "beverages",
+            image: "IMG-20251103-WA0035.jpg",
+          },
+          {
+            id: 8,
+            name: "Coffee (Filter)",
+            price: 45.0,
+            category: "beverages",
+            image:
+              "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1000&q=80",
+          },
+          {
+            id: 10,
+            name: "Soda (Canned)",
+            price: 30.0,
+            category: "beverages",
+            image:
+              "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=1000&q=80",
+          },
+          {
+            id: 18,
+            name: "Cold Coffee (Thick)",
+            price: 89.0,
+            category: "beverages",
+            image: "IMG-20251103-WA0033.jpg",
+          },
+          {
+            id: 12,
+            name: "Ice Creams (Scoop)",
+            price: 60.0,
+            category: "desserts",
+            image: "IMG-20251103-WA0031.jpg",
+          },
+          {
+            id: 13,
+            name: "Milkshakes (Thick)",
+            price: 110.0,
+            category: "desserts",
+            image: "IMG-20251103-WA0034.jpg",
+          },
+        ];
+
+        const menuContainer = document.getElementById("menu-cards-container");
+        const filterButtons = document.querySelectorAll(".filter-btn");
+
+        let cart = [];
+        let selectedPaymentMethod = "";
+        let customerDetails = {};
+        let orderStatus = "PENDING";
+
+        const cartButton = document.getElementById("cart-button");
+        const cartSidebar = document.getElementById("cart-sidebar");
+        const closeCartButton = document.getElementById("close-cart");
+        const cartItemsContainer = document.getElementById("cart-items");
+        const cartCount = document.getElementById("cart-count");
+        const cartTotalEl = document.getElementById("cart-total");
+        const checkoutBtn = document.getElementById("checkout-btn");
+        const emptyCartMessage = document.getElementById("empty-cart-message");
+        const geminiSuggestBtn = document.getElementById("gemini-suggest-btn");
+
+        const customerDetailsModal = document.getElementById(
+          "customer-details-modal",
+        );
+        const customerDetailsForm = document.getElementById(
+          "customer-details-form",
+        );
+        const closeCustomerModalBtn = document.getElementById(
+          "close-customer-modal",
+        );
+
+        const billModal = document.getElementById("bill-modal");
+        const billItemsContainer = document.getElementById("bill-items");
+        const billTotalEl = document.getElementById("bill-total");
+        const billDateEl = document.getElementById("bill-date");
+        const billPaymentMethodEl = document.getElementById(
+          "bill-payment-method",
+        );
+        const closeBillModalBtn = document.getElementById("close-bill-modal");
+        const printBillBtn = document.getElementById("print-bill-btn");
+        const exportOrderBtn = document.getElementById("export-order-btn");
+
+        const paymentModal = document.getElementById("payment-modal");
+        const closePaymentModalBtn = document.getElementById(
+          "close-payment-modal",
+        );
+        const paymentOptions = document.querySelectorAll(".payment-option-btn");
+
+        const quickOrderBtn = document.getElementById("quick-order-btn");
+        quickOrderBtn.addEventListener("click", () => {
+          lenis.scrollTo("#menu");
+        });
+
+        const menuBtn = document.getElementById("menu-btn");
+        const mobileMenu = document.getElementById("mobile-menu");
+        menuBtn.addEventListener("click", () => {
+          mobileMenu.classList.toggle("hidden");
+        });
+        mobileMenu.querySelectorAll("a").forEach((link) => {
+          link.addEventListener("click", () => {
+            mobileMenu.classList.add("hidden");
+          });
+        });
+
+        function updateCartCount() {
+          const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+          cartCount.textContent = totalItems;
+          checkoutBtn.disabled = totalItems === 0;
+          geminiSuggestBtn.disabled = totalItems === 0;
+          emptyCartMessage.classList.toggle("hidden", totalItems > 0);
+        }
+        function calculateTotal() {
+          const total = cart.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0,
+          );
+          cartTotalEl.textContent = `₹${total.toFixed(2)}`;
+          return total;
+        }
+        function renderCart() {
+          cartItemsContainer.innerHTML = "";
+          if (cart.length === 0) {
+            emptyCartMessage.classList.remove("hidden");
+            return;
+          }
+          emptyCartMessage.classList.add("hidden");
+          cart.forEach((item) => {
+            const totalItemPrice = (item.price * item.quantity).toFixed(2);
+            const itemEl = document.createElement("div");
+            itemEl.className =
+              "flex items-center py-2 border-b last:border-b-0";
+            itemEl.innerHTML = `
+                    <img src="${item.image}" alt="${
+                      item.name
+                    }" class="w-12 h-12 object-cover rounded-md flex-shrink-0">
+                    <div class="flex-grow pl-3 pr-2">
+                      <p class="font-semibold" style="color: var(--color-text);">${
+                        item.name
+                      }</p>
+                      <p class="text-sm text-gray-500">₹${item.price.toFixed(
+                        2,
+                      )}</p>
+                    </div>
+                    <div class="flex items-center space-x-2 flex-shrink-0">
+                      <button class="update-quantity-btn hover:text-['var(--color-primary)'] p-1" style="color: var(--color-primary);" data-id="${
+                        item.id
+                      }" data-action="decrease"><i class="fas fa-minus-circle"></i></button>
+                      <span class="font-bold w-5 text-center" style="color: var(--color-text);">${
+                        item.quantity
+                      }</span>
+                      <button class="update-quantity-btn hover:text-green-700 p-1" style="color: #388E3C;" data-id="${
+                        item.id
+                      }" data-action="increase"><i class="fas fa-plus-circle"></i></button>
+                      <p class="font-bold w-16 text-right" style="color: var(--color-text);">₹${totalItemPrice}</p>
+                      <button class="remove-from-cart-btn hover:text-['var(--color-primary)'] p-1 ml-2" style="color: var(--color-primary);" data-id="${
+                        item.id
+                      }"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                  `;
+            cartItemsContainer.appendChild(itemEl);
+          });
+          calculateTotal();
+          updateCartCount();
+        }
+        const handleAddToCart = (e) => {
+          const itemId = parseInt(e.currentTarget.dataset.id);
+          const menuItem = menuItems.find((item) => item.id === itemId);
+          const existingItem = cart.find((item) => item.id === itemId);
+          if (existingItem) existingItem.quantity += 1;
+          else cart.push({ ...menuItem, quantity: 1 });
+          renderCart();
+          cartSidebar.classList.remove("translate-x-full");
+        };
+        cartItemsContainer.addEventListener("click", (e) => {
+          const target = e.target.closest("button");
+          if (!target) return;
+          const itemId = parseInt(target.dataset.id);
+          const itemIndex = cart.findIndex((item) => item.id === itemId);
+          if (itemIndex === -1) return;
+          if (target.classList.contains("remove-from-cart-btn")) {
+            cart.splice(itemIndex, 1);
+            renderCart();
+          } else if (target.classList.contains("update-quantity-btn")) {
+            const action = target.dataset.action;
+            if (action === "increase") cart[itemIndex].quantity += 1;
+            else if (action === "decrease") {
+              cart[itemIndex].quantity -= 1;
+              if (cart[itemIndex].quantity <= 0) cart.splice(itemIndex, 1);
+            }
+            renderCart();
+          }
+        });
+
+        checkoutBtn.addEventListener("click", () => {
+          cartSidebar.classList.add("translate-x-full");
+          customerDetailsModal.classList.remove("hidden");
+        });
+        customerDetailsForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          customerDetails = {
+            name: document.getElementById("customer-name").value,
+            phone: document.getElementById("customer-phone").value,
+            email: document.getElementById("customer-email").value,
+            id: document.getElementById("customer-id").value,
+            department: document.getElementById("customer-department").value,
+            instructions: document.getElementById("customer-instructions")
+              .value,
+            orderDate: new Date().toISOString(),
+          };
+          customerDetailsModal.classList.add("hidden");
+          paymentModal.classList.remove("hidden");
+        });
+        closeCustomerModalBtn.addEventListener("click", () => {
+          customerDetailsModal.classList.add("hidden");
+        });
+        closePaymentModalBtn.addEventListener("click", () => {
+          paymentModal.classList.add("hidden");
+        });
+
+        function loadSavedOrders() {
+          try {
+            const raw = localStorage.getItem("neeraj_canteen_orders_v1");
+            return raw ? JSON.parse(raw) : [];
+          } catch {
+            return [];
+          }
+        }
+        function saveOrders(orders) {
+          localStorage.setItem(
+            "neeraj_canteen_orders_v1",
+            JSON.stringify(orders),
+          );
+        }
+        function saveCurrentOrderToStorage() {
+          const orderRecord = {
+            status: orderStatus,
+            orderDate: new Date().toLocaleString(),
+            paymentMethod: selectedPaymentMethod || "N/A",
+            customer: {
+              name: customerDetails?.name || "",
+              phone: customerDetails?.phone || "",
+              email: customerDetails?.email || "",
+              id: customerDetails?.id || "",
+              department: customerDetails?.department || "",
+              instructions: customerDetails?.instructions || "",
+            },
+            items: cart.map((it) => ({
+              id: it.id,
+              name: it.name,
+              quantity: it.quantity,
+              unitPrice: it.price,
+              totalPrice: it.price * it.quantity,
+            })),
+            total: cart.reduce((s, it) => s + it.price * it.quantity, 0),
+          };
+          try {
+            const orders = loadSavedOrders();
+            orders.push(orderRecord);
+            saveOrders(orders);
+          } catch (e) {
+            console.error("Failed to save order", e);
+          }
+        }
+
+        paymentOptions.forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            selectedPaymentMethod = e.currentTarget.dataset.payment;
+            orderStatus = "PAID";
+            paymentModal.classList.add("hidden");
+            saveCurrentOrderToStorage();
+            generateBill();
+          });
+        });
+
+        function generateBill() {
+          billItemsContainer.innerHTML = "";
+          let grandTotal = 0;
+          cart.forEach((item) => {
+            const total = item.price * item.quantity;
+            grandTotal += total;
+            const el = document.createElement("div");
+            el.className = "flex justify-between py-2";
+            el.innerHTML = `<p style="color:#4A4A4A;">${
+              item.name
+            } <span class="text-sm text-gray-500">x ${
+              item.quantity
+            }</span></p><p class="font-medium">₹${total.toFixed(2)}</p>`;
+            billItemsContainer.appendChild(el);
+          });
+          billTotalEl.textContent = `₹${grandTotal.toFixed(2)}`;
+          billDateEl.textContent = new Date().toLocaleString();
+          billPaymentMethodEl.textContent = `Payment: ${selectedPaymentMethod} • Status: ${orderStatus}`;
+          billModal.classList.remove("hidden");
+        }
+        closeBillModalBtn.addEventListener("click", () => {
+          billModal.classList.add("hidden");
+          cart = [];
+          renderCart();
+          selectedPaymentMethod = "";
+          orderStatus = "PENDING";
+        });
+
+        exportOrderBtn.addEventListener("click", () => exportOrderToExcel());
+        function exportOrderToExcel() {
+          const orders = loadSavedOrders();
+          const headers = [
+            "Order Status",
+            "Order Date",
+            "Payment Method",
+            "Customer Name",
+            "Phone Number",
+            "Email Address",
+            "Student/Faculty ID",
+            "Department",
+            "Special Instructions",
+            "Total Amount",
+            "Items (Name x Qty @ Unit = Total; ...)",
+          ];
+          const rows = orders.map((o) => {
+            const itemsStr = o.items
+              .map(
+                (it) =>
+                  `${it.name} x ${it.quantity} @ ₹${it.unitPrice.toFixed(
+                    2,
+                  )} = ₹${it.totalPrice.toFixed(2)}`,
+              )
+              .join("; ");
+            return [
+              o.status,
+              o.orderDate,
+              o.paymentMethod,
+              o.customer.name,
+              o.customer.phone,
+              o.customer.email,
+              o.customer.id || "Not provided",
+              o.customer.department || "Not provided",
+              o.customer.instructions || "None",
+              `₹${o.total.toFixed(2)}`,
+              itemsStr,
+            ];
+          });
+          const ws = XLSX.utils.aoa_to_sheet([
+            ["NEERAJ CANTEEN SHOP - ORDERS (ACCUMULATED)"],
+            [""],
+            headers,
+            ...rows,
+          ]);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Orders");
+          XLSX.writeFile(wb, "Neeraj_Canteen_Orders.xlsx");
+        }
+
+        printBillBtn.addEventListener("click", () => generatePrintInvoice());
+        function generatePrintInvoice() {
+          const total = calculateTotal().toFixed(2),
+            date = new Date().toLocaleString(),
+            shopName = "Neeraj Canteen Shop",
+            shopAddress = "Main Campus Building, Central University";
+          let html = `
+                  <div class="max-w-xs mx-auto text-sm text-black">
+                    <div class="text-center mb-4">
+                      <h3 class="text-xl font-bold">${shopName}</h3>
+                      <p class="text-xs">${shopAddress}</p>
+                      <p class="text-xs mt-2">Date: ${date}</p>
+                      <p class="text-xs font-semibold">Payment Method: ${selectedPaymentMethod}</p>
+                      <p class="text-xs">--- Simplified Invoice ---</p>
+                    </div>
+                    <table class="w-full text-left">
+                      <thead><tr>
+                        <th class="font-bold border-b border-gray-400 py-1" style="width:50%;">Item</th>
+                        <th class="font-bold border-b border-gray-400 py-1 text-center" style="width:15%;">Qty</th>
+                        <th class="font-bold border-b border-gray-400 py-1 text-right" style="width:35%;">Total</th>
+                      </tr></thead><tbody>`;
+          cart.forEach((it) => {
+            const sub = (it.price * it.quantity).toFixed(2);
+            html += `<tr><td>${it.name}</td><td class="text-center">${it.quantity}</td><td class="text-right">₹${sub}</td></tr>`;
+          });
+          html += `</tbody></table><div class="border-t-2 border-black pt-2 mt-4 text-lg"><div class="flex justify-between font-extrabold"><span>GRAND TOTAL:</span><span class="text-right">₹${total}</span></div></div><div class="text-center mt-6"><p class="text-xs font-semibold">Thank you! Visit Again.</p></div></div>`;
+          const printArea = document.getElementById("invoice-print-area");
+          printArea.innerHTML = html;
+          setTimeout(() => window.print(), 100);
+        }
+
+        function renderMenu(category = "all") {
+          menuContainer.innerHTML = "";
+          (category === "all"
+            ? menuItems
+            : menuItems.filter((i) => i.category === category)
+          ).forEach((item, idx) => {
+            const card = document.createElement("div");
+            card.className =
+              "bg-white rounded-xl shadow-lg overflow-hidden menu-card menu-card-wipe animate-on-scroll";
+            card.style.transitionDelay = `${idx * 50}ms`;
+            card.innerHTML = `
+                    <img src="${item.image}" alt="${
+                      item.name
+                    }" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                      <h3 class="font-bold text-xl mb-2" style="color: var(--color-text);">${
+                        item.name
+                      }</h3>
+                      <div class="flex justify-between items-center">
+                        <span class="font-bold text-2xl" style="color: var(--color-text);">₹${item.price.toFixed(
+                          2,
+                        )}</span>
+                        <button class="add-to-cart-btn main-gradient-bg text-white font-semibold py-2 px-4 rounded-lg cta-button" data-id="${
+                          item.id
+                        }">
+                          <i class="fas fa-cart-plus mr-2"></i> Add
+                        </button>
+                      </div>
+                    </div>`;
+            menuContainer.appendChild(card);
+            card
+              .querySelector(".add-to-cart-btn")
+              .addEventListener("click", handleAddToCart);
+          });
+          menuContainer
+            .querySelectorAll(".animate-on-scroll")
+            .forEach((el) => observer.observe(el));
+        }
+        filterButtons.forEach((button) => {
+          button.addEventListener("click", (e) => {
+            filterButtons.forEach((b) => b.classList.remove("active"));
+            e.currentTarget.classList.add("active");
+            renderMenu(e.currentTarget.dataset.category);
+            lenis.scrollTo("#menu");
+          });
+        });
+
+        const animatedElements =
+          document.querySelectorAll(".animate-on-scroll");
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting)
+                entry.target.classList.add("is-visible");
+            });
+          },
+          { threshold: 0.1 },
+        );
+        animatedElements.forEach((el) => observer.observe(el));
+
+        cartButton.addEventListener("click", () =>
+          cartSidebar.classList.remove("translate-x-full"),
+        );
+        closeCartButton.addEventListener("click", () =>
+          cartSidebar.classList.add("translate-x-full"),
+        );
+
+        const suggestionModal = document.getElementById("suggestion-modal");
+        const suggestionModalContent = document.getElementById(
+          "suggestion-modal-content",
+        );
+        const suggestionLoading = document.getElementById("suggestion-loading");
+        const suggestionResult = document.getElementById("suggestion-result");
+        const suggestionItemName = document.getElementById(
+          "suggestion-item-name",
+        );
+        const suggestionItemImage = document.getElementById(
+          "suggestion-item-image",
+        );
+        const suggestionReason = document.getElementById("suggestion-reason");
+        const addSuggestionBtn = document.getElementById("add-suggestion-btn");
+        const closeSuggestionModalBtn = document.getElementById(
+          "close-suggestion-modal",
+        );
+        let suggestedItem = null;
+
+        function getAISuggestion() {
+          const cartIds = cart.map((i) => i.id);
+          const available = menuItems.filter((i) => !cartIds.includes(i.id));
+          if (available.length === 0)
+            return menuItems[Math.floor(Math.random() * menuItems.length)];
+          const hasSnacks = cart.some((i) => i.category === "snacks");
+          const hasDesserts = cart.some((i) => i.category === "desserts");
+          const hasBeverage = cart.some((i) => i.category === "beverages");
+          if (hasSnacks && !hasBeverage) {
+            const cc = available.find((i) => i.name.includes("Cold Coffee"));
+            if (cc)
+              return {
+                ...cc,
+                reason:
+                  "A refreshing Cold Coffee is the perfect partner for your savory snacks!",
+              };
+          }
+          if (hasSnacks && !hasDesserts) {
+            const ms = available.find((i) => i.name.includes("Milkshakes"));
+            if (ms)
+              return {
+                ...ms,
+                reason: "Finish off your meal with a creamy, thick Milkshake!",
+              };
+          }
+          if (hasBeverage && !hasSnacks) {
+            const sm = available.find((i) => i.name.includes("Samosa"));
+            if (sm)
+              return {
+                ...sm,
+                reason:
+                  "You've got the drink, now grab a classic Samosa to go with it!",
+              };
+          }
+          const pick = available[Math.floor(Math.random() * available.length)];
+          return {
+            ...pick,
+            reason: "Try something new for a complete canteen experience!",
+          };
+        }
+        geminiSuggestBtn.addEventListener("click", () => {
+          suggestionModal.classList.remove("hidden");
+          suggestionModalContent.classList.remove("scale-95", "opacity-0");
+          suggestionLoading.classList.remove("hidden");
+          suggestionResult.classList.add("hidden");
+          setTimeout(() => {
+            suggestedItem = getAISuggestion();
+            suggestionItemName.textContent = suggestedItem.name;
+            suggestionItemImage.src = suggestedItem.image;
+            suggestionReason.textContent = suggestedItem.reason;
+            suggestionLoading.classList.add("hidden");
+            suggestionResult.classList.remove("hidden");
+            suggestionModalContent.classList.remove("scale-95", "opacity-0");
+          }, 1000);
+        });
+        closeSuggestionModalBtn.addEventListener("click", () => {
+          suggestionModalContent.classList.add("scale-95", "opacity-0");
+          setTimeout(() => suggestionModal.classList.add("hidden"), 300);
+        });
+        addSuggestionBtn.addEventListener("click", () => {
+          if (!suggestedItem) return;
+          const exist = cart.find((i) => i.id === suggestedItem.id);
+          if (exist) exist.quantity += 1;
+          else cart.push({ ...suggestedItem, quantity: 1 });
+          renderCart();
+          suggestionModalContent.classList.add("scale-95", "opacity-0");
+          setTimeout(() => suggestionModal.classList.add("hidden"), 300);
+          suggestedItem = null;
+        });
+
+        renderMenu("all");
+        renderCart();
+
+        // Dashboard + Pyodide
+        const openDashboardBtn = document.getElementById("open-dashboard");
+        const openDashMobile = document.getElementById("open-dashboard-mobile");
+        const dashboardModal = document.getElementById("dashboard-modal");
+        const closeDashboardBtn = document.getElementById("close-dashboard");
+        const dashboardLoading = document.getElementById("dashboard-loading");
+        const dashboardError = document.getElementById("dashboard-error");
+        const dashboardContent = document.getElementById("dashboard-content");
+        const checkboxTodayOnly = document.getElementById(
+          "dashboard-today-only",
+        );
+        const refreshDashboardBtn =
+          document.getElementById("refresh-dashboard");
+        const downloadCsvBtn = document.getElementById(
+          "download-dashboard-csv",
+        );
+        const inspectOrdersBtn = document.getElementById("inspect-orders-btn");
+
+        let pyodideInstance = null;
+
+        function openDashboardModal() {
+          dashboardModal.classList.remove("hidden");
+          renderDashboard();
+        }
+        if (openDashboardBtn)
+          openDashboardBtn.addEventListener("click", openDashboardModal);
+        if (openDashMobile)
+          openDashMobile.addEventListener("click", () => {
+            mobileMenu.classList.add("hidden");
+            openDashboardModal();
+          });
+        if (closeDashboardBtn)
+          closeDashboardBtn.addEventListener("click", () =>
+            dashboardModal.classList.add("hidden"),
+          );
+        if (refreshDashboardBtn)
+          refreshDashboardBtn.addEventListener("click", renderDashboard);
+        if (checkboxTodayOnly)
+          checkboxTodayOnly.addEventListener("change", renderDashboard);
+        if (inspectOrdersBtn) {
+          inspectOrdersBtn.addEventListener("click", () => {
+            const o = loadSavedOrders();
+            console.log("Orders:", o);
+            dashboardError.textContent = `Loaded orders: ${o.length}`;
+            dashboardError.classList.remove("hidden");
+            setTimeout(() => dashboardError.classList.add("hidden"), 3000);
+          });
+        }
+
+        async function ensurePyodide() {
+          if (pyodideInstance) return pyodideInstance;
+          try {
+            if (typeof window.loadPyodide !== "function") {
+              await new Promise((resolve, reject) => {
+                const s = document.createElement("script");
+                s.src =
+                  "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js";
+                s.onload = resolve;
+                s.onerror = () =>
+                  reject(new Error("Failed to load Pyodide script"));
+                document.head.appendChild(s);
+              });
+            }
+            dashboardLoading.classList.remove("hidden");
+            const py = await loadPyodide({
+              indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/",
+            });
+            await py.loadPackage(["pandas", "numpy", "matplotlib"]);
+            pyodideInstance = py;
+            return py;
+          } catch (e) {
+            console.error("Pyodide init/loadPackage failed:", e);
+            dashboardError.textContent =
+              "Advanced analytics not available. Showing basic dashboard.";
+            dashboardError.classList.remove("hidden");
+            throw e;
+          }
+        }
+
+        async function renderDashboard() {
+          try {
+            dashboardError.classList.add("hidden");
+            dashboardContent.classList.add("hidden");
+            dashboardLoading.classList.remove("hidden");
+
+            const py = await ensurePyodide();
+            const orders = loadSavedOrders();
+            const todayOnly = checkboxTodayOnly?.checked ?? false;
+            py.globals.set("orders_js", orders);
+            py.globals.set("today_only", todayOnly);
+
+            const code = `
+      import pandas as pd
+      import numpy as np
+      import matplotlib
+      matplotlib.use('Agg')
+      import matplotlib.pyplot as plt
+      from io import BytesIO
+      import base64
+      from datetime import date
+      from pyodide.ffi import to_py
+
+      def fig_to_data_url(fig):
+          buf = BytesIO()
+          fig.tight_layout()
+          fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+          data = base64.b64encode(buf.getvalue()).decode('ascii')
+          plt.close(fig)
+          return 'data:image/png;base64,' + data
+
+      # safe JS->Py
+      try:
+          orders_py = to_py(orders_js)
+      except Exception:
+          orders_py = []
+      if not isinstance(orders_py, list):
+          orders_py = []
+
+      # normalize rows
+      clean_orders = []
+      for idx, o in enumerate(orders_py):
+        if not isinstance(o, dict):
+          continue
+        r = {}
+        r['_orig_index'] = int(idx)
+        r['status'] = str(o.get('status','') or '')
+        r['orderDate'] = o.get('orderDate','') or ''
+        r['paymentMethod'] = str(o.get('paymentMethod','') or 'N/A')
+        try:
+          r['total'] = float(o.get('total',0) or 0)
+        except Exception:
+          r['total'] = 0.0
+        cust = o.get('customer', {}) if isinstance(o.get('customer'), dict) else {}
+        r['customer'] = {
+          'name': str(cust.get('name','') or ''),
+          'phone': str(cust.get('phone','') or ''),
+          'email': str(cust.get('email','') or ''),
+          'id': str(cust.get('id','') or ''),
+          'department': str(cust.get('department','') or ''),
+          'instructions': str(cust.get('instructions','') or ''),
+        }
+        items = o.get('items', [])
+        norm_items = []
+        if isinstance(items, list):
+          for it in items:
+            if not isinstance(it, dict):
+              continue
+            nm = str(it.get('name','') or '')
+            try: q = int(it.get('quantity',0) or 0)
+            except: q = 0
+            try: unit = float(it.get('unitPrice', it.get('price',0)) or 0)
+            except: unit = 0.0
+            try: line = float(it.get('totalPrice', q*unit) or q*unit)
+            except: line = float(q*unit)
+            norm_items.append({'name': nm, 'quantity': q, 'unitPrice': unit, 'totalPrice': line})
+        r['items'] = norm_items
+        clean_orders.append(r)
+
+      df = pd.DataFrame(clean_orders)
+      if df.empty:
+          df = pd.DataFrame(columns=['status','orderDate','paymentMethod','customer','items','total'])
+
+      cust_df = pd.DataFrame()
+      if 'customer' in df and not df['customer'].isnull().all():
+          try:
+              cust_df = pd.json_normalize(df['customer']).rename(columns=lambda c: f'customer.{c}')
+          except Exception:
+              cust_df = pd.DataFrame()
+
+      dfn = pd.concat([df.drop(columns=['customer'], errors='ignore'), cust_df], axis=1)
+
+      for col in ['customer.name','customer.phone','customer.email','customer.id','customer.department','customer.instructions','items','total','status','paymentMethod','orderDate']:
+          if col not in dfn.columns:
+              dfn[col] = '' if col != 'total' else 0.0
+
+      dfn['parsedDate'] = pd.to_datetime(dfn.get('orderDate'), errors='coerce')
+      if bool(today_only):
+          today = pd.Timestamp(date.today())
+          dfn = dfn[dfn['parsedDate'].dt.date == today.date()]
+
+      total_orders = int(len(dfn))
+      total_revenue = float(pd.to_numeric(dfn['total'], errors='coerce').fillna(0).sum())
+      avg_ticket = float(total_revenue / total_orders) if total_orders else 0.0
+      unique_customers = int(pd.Series(dfn.get('customer.phone')).replace('', np.nan).dropna().nunique())
+
+      by_status = pd.Series(dfn.get('status')).value_counts()
+      by_payment = pd.Series(dfn.get('paymentMethod')).replace('', 'N/A').value_counts()
+      by_department = pd.Series(dfn.get('customer.department')).replace('', 'Not provided').value_counts().head(12)
+
+      items_rows = []
+      for _, row in dfn.iterrows():
+          row_items = row.get('items') or []
+          if not isinstance(row_items, list):
+              continue
+          for it in row_items:
+              try:
+                  nm = str(it.get('name','') or '')
+                  q = int(it.get('quantity',0) or 0)
+                  lt = float(it.get('totalPrice',0) or 0)
+                  items_rows.append({'itemName': nm, 'qty': q, 'lineTotal': lt})
+              except Exception:
+                  pass
+      items_df = pd.DataFrame(items_rows)
+      if items_df.empty:
+          top_items = pd.DataFrame(columns=['qty','lineTotal'])
+      else:
+          top_items = items_df.groupby('itemName').agg(qty=('qty','sum'), lineTotal=('lineTotal','sum')).sort_values('qty', ascending=False).head(10)
+
+      def make_bar(series, title, xlabel):
+          if series is None or getattr(series, 'empty', True):
+              fig, ax = plt.subplots(figsize=(5,3))
+              ax.text(0.5, 0.5, 'No data', ha='center', va='center'); ax.axis('off'); return fig
+          fig, ax = plt.subplots(figsize=(6,4))
+          series = series.iloc[::-1]
+          series.plot(kind='barh', ax=ax, color='#e53935')
+          ax.set_title(title); ax.set_xlabel(xlabel); ax.set_ylabel('')
+          for i, v in enumerate(series.values):
+              try: ax.text(float(v), i, f' {int(v)}', va='center')
+              except Exception: pass
+          return fig
+
+      def make_pie(series, title):
+          if series is None or getattr(series, 'empty', True):
+              fig, ax = plt.subplots(figsize=(5,3))
+              ax.text(0.5, 0.5, 'No data', ha='center', va='center'); ax.axis('off'); return fig
+          fig, ax = plt.subplots(figsize=(5,5))
+          ax.pie(series.values, labels=series.index, autopct='%1.0f%%', startangle=140)
+          ax.set_title(title); return fig
+
+      fig_status = make_bar(by_status, 'Orders by Status', 'Count')
+      fig_payment = make_pie(by_payment, 'Payment Methods')
+      fig_department = make_bar(by_department, 'Departments (Top)', 'Orders')
+    # department pie
+    fig_department_pie = make_pie(by_department, 'Departments (Share)')
+    # histogram of order totals
+    try:
+      totals = pd.to_numeric(dfn.get('total'), errors='coerce').fillna(0)
+      fig_hist, ax = plt.subplots(figsize=(6,4))
+      ax.hist(totals.values, bins=10, color='#fb8c00', edgecolor='black')
+      ax.set_title('Order Value Distribution')
+      ax.set_xlabel('Order Total')
+      ax.set_ylabel('Count')
+    except Exception:
+      fig_hist, ax = plt.subplots(figsize=(6,4))
+      ax.text(0.5, 0.5, 'No data', ha='center', va='center'); ax.axis('off')
+      fig_items = make_bar(top_items['qty'] if not top_items.empty else pd.Series(dtype=int), 'Top Items', 'Qty')
+
+      table_cols = ['status','orderDate','paymentMethod','customer.name','customer.phone','customer.email','customer.id','customer.department','customer.instructions','items','total']
+      for c in table_cols:
+          if c not in dfn.columns:
+              dfn[c] = '' if c not in ('total','items') else 0.0
+
+      # Build a human-readable items summary string per row (Name x Qty @ ₹unit = ₹line; ...)
+      def items_to_str(items_list):
+          try:
+              if not isinstance(items_list, list):
+                  return ''
+              parts = []
+              for it in items_list:
+                  if not isinstance(it, dict):
+                      continue
+                  nm = str(it.get('name','') or '')
+                  q = int(it.get('quantity',0) or 0)
+                  unit = float(it.get('unitPrice', it.get('price',0)) or 0)
+                  line = float(it.get('totalPrice', q*unit) or q*unit)
+                  parts.append(f"{nm} x {q} @ ₹{unit:.2f} = ₹{line:.2f}")
+              return "; ".join(parts)
+          except Exception:
+              return ''
+
+      rows = []
+      for _, row in dfn.fillna('').iterrows():
+          items_val = row.get('items', []) if not (row.get('items') is None) else []
+          items_summary = items_to_str(items_val)
+          rows.append({
+              'status': row.get('status',''),
+              'orderDate': row.get('orderDate',''),
+              'paymentMethod': row.get('paymentMethod',''),
+              'customer_name': row.get('customer.name',''),
+              'customer_phone': row.get('customer.phone',''),
+              'customer_email': row.get('customer.email',''),
+              'customer_id': row.get('customer.id',''),
+              'customer_department': row.get('customer.department',''),
+              'customer_instructions': row.get('customer.instructions',''),
+            'items': items_summary,
+            'orig_index': int(row.get('_orig_index') if row.get('_orig_index') is not None else -1),
+              'total': float(row.get('total') or 0.0),
+          })
+
+      result = {
+        'summary': {
+          'total_orders': total_orders,
+          'total_revenue': total_revenue,
+          'avg_ticket': avg_ticket,
+          'unique_customers': unique_customers,
+        },
+        'charts': {
+        'status': fig_to_data_url(fig_status),
+        'payment': fig_to_data_url(fig_payment),
+        'department': fig_to_data_url(fig_department),
+        'top_items': fig_to_data_url(fig_items),
+        'hist': fig_to_data_url(fig_hist),
+        'department_pie': fig_to_data_url(fig_department_pie),
+      },
+        'table_rows': rows
+      }
+      result
+                  `;
+            const pyResult = await py.runPythonAsync(code);
+            const result = pyResult.toJs({
+              dict_converter: Object.fromEntries,
+            });
+
+            // KPIs
+            document.getElementById("kpi-total-orders").textContent =
+              result.summary.total_orders.toString();
+            document.getElementById("kpi-total-revenue").textContent =
+              `₹${Number(result.summary.total_revenue).toFixed(2)}`;
+            document.getElementById("kpi-avg-ticket").textContent = `₹${Number(
+              result.summary.avg_ticket,
+            ).toFixed(2)}`;
+            document.getElementById("kpi-unique-customers").textContent =
+              result.summary.unique_customers.toString();
+
+            // No data notice
+            if (result.summary.total_orders === 0) {
+              dashboardError.textContent =
+                "No orders found for the selected range.";
+              dashboardError.classList.remove("hidden");
+              setTimeout(() => dashboardError.classList.add("hidden"), 3000);
+            }
+
+            // Charts
+            document.getElementById("chart-status").src = result.charts.status;
+            document.getElementById("chart-payment").src =
+              result.charts.payment;
+            document.getElementById("chart-department").src =
+              result.charts.department;
+            document.getElementById("chart-top-items").src =
+              result.charts.top_items;
+            // new charts
+            try {
+              document.getElementById("chart-hist").src = result.charts.hist;
+            } catch (e) {}
+            try {
+              document.getElementById("chart-department-pie").src =
+                result.charts.department_pie;
+            } catch (e) {}
+
+            // Build a mapping to original saved orders so edits can target the correct index
+            // result.table_rows includes 'orig_index' populated by Pyodide
+            const tbody = document.getElementById("orders-table-body");
+            tbody.innerHTML = "";
+            result.table_rows.forEach((r) => {
+              const tr = document.createElement("tr");
+              const origIndex =
+                typeof r.orig_index !== "undefined" ? r.orig_index : "";
+              tr.innerHTML = `
+                      <td class="py-2 pr-4">${r.status || ""}</td>
+                      <td class="py-2 pr-4">${r.orderDate || ""}</td>
+                      <td class="py-2 pr-4">${r.paymentMethod || ""}</td>
+                      <td class="py-2 pr-4">${r.customer_name || ""}</td>
+                      <td class="py-2 pr-4">${r.customer_phone || ""}</td>
+                      <td class="py-2 pr-4">${r.customer_email || ""}</td>
+                      <td class="py-2 pr-4">${r.customer_id || ""}</td>
+                      <td class="py-2 pr-4">${r.customer_department || ""}</td>
+                      <td class="py-2 pr-4">${
+                        r.customer_instructions || ""
+                      }</td>
+                      <td class="py-2 pr-4">${r.items || ""}</td>
+                      <td class="py-2 pr-4"><button class="edit-order-btn bg-blue-600 text-white text-sm px-2 py-1 rounded" data-orig-index="${origIndex}">Edit</button></td>
+                      <td class="py-2 pr-4"><button class="delete-order-btn bg-red-600 text-white text-sm px-2 py-1 rounded" data-orig-index="${origIndex}">Delete</button></td>
+                      <td class="py-2 pr-4">₹${Number(r.total || 0).toFixed(
+                        2,
+                      )}</td>`;
+              tbody.appendChild(tr);
+            });
+            // CSV
+            if (downloadCsvBtn) {
+              // create CSV from result.table_rows and trigger download reliably
+              downloadCsvBtn.onclick = () => {
+                const headers = [
+                  "Status",
+                  "Order Date",
+                  "Payment",
+                  "Customer",
+                  "Phone",
+                  "Email",
+                  "ID",
+                  "Department",
+                  "Special Instruction",
+                  "Items",
+                  "Total",
+                ];
+                const rows = result.table_rows.map((r) => [
+                  r.status || "",
+                  r.orderDate || "",
+                  r.paymentMethod || "",
+                  r.customer_name || "",
+                  r.customer_phone || "",
+                  r.customer_email || "",
+                  r.customer_id || "",
+                  r.customer_department || "",
+                  (r.customer_instructions || "")
+                    .toString()
+                    .replace(/\n/g, " "),
+                  (r.items || "").toString().replace(/\n/g, " "),
+                  Number(r.total || 0).toFixed(2),
+                ]);
+                const csv = [headers, ...rows]
+                  .map((cols) =>
+                    cols
+                      .map((v) => '"' + String(v).replace(/"/g, '""') + '"')
+                      .join(","),
+                  )
+                  .join("\n");
+                const blob = new Blob([csv], {
+                  type: "text/csv;charset=utf-8;",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `canteen_orders_${
+                  checkboxTodayOnly.checked ? "today" : "all"
+                }.csv`;
+                // append to DOM for maximum compatibility, then click
+                document.body.appendChild(a);
+                a.click();
+                // revoke and remove after a short timeout to ensure download starts
+                setTimeout(() => {
+                  URL.revokeObjectURL(url);
+                  try {
+                    document.body.removeChild(a);
+                  } catch (e) {}
+                }, 200);
+              };
+            }
+
+            dashboardLoading.classList.add("hidden");
+            dashboardContent.classList.remove("hidden");
+          } catch (err) {
+            console.error(err);
+            dashboardLoading.classList.add("hidden");
+            dashboardError.textContent =
+              "Failed to render advanced Pyodide dashboard. Showing basic version.";
+            dashboardError.classList.remove("hidden");
+            try {
+              renderDashboardFallback();
+            } catch (e2) {
+              console.error("Fallback failed", e2);
+            }
+          }
+        }
+
+        // JS-only fallback (no Pyodide)
+        function renderDashboardFallback() {
+          const orders = loadSavedOrders();
+          const todayOnly = checkboxTodayOnly?.checked ?? false;
+          // annotate original index so edits can map back to saved orders
+          let filtered = orders.map((o, i) => ({ ...o, _orig_index: i }));
+          if (todayOnly) {
+            const todayStr = new Date().toLocaleDateString();
+            filtered = filtered.filter((o) => {
+              try {
+                const d = new Date(o.orderDate);
+                return d.toLocaleDateString() === todayStr;
+              } catch {
+                return false;
+              }
+            });
+          }
+          const totalOrders = filtered.length;
+          const totalRevenue = filtered.reduce(
+            (s, o) => s + (Number(o.total) || 0),
+            0,
+          );
+          const avgTicket = totalOrders ? totalRevenue / totalOrders : 0;
+          const uniqueCustomers = new Set(
+            filtered.map((o) => (o.customer && o.customer.phone) || ""),
+          ).size;
+
+          document.getElementById("kpi-total-orders").textContent =
+            String(totalOrders);
+          document.getElementById("kpi-total-revenue").textContent =
+            `₹${totalRevenue.toFixed(2)}`;
+          document.getElementById("kpi-avg-ticket").textContent =
+            `₹${avgTicket.toFixed(2)}`;
+          document.getElementById("kpi-unique-customers").textContent =
+            String(uniqueCustomers);
+          if (totalOrders === 0) {
+            dashboardError.textContent =
+              "No orders found for the selected range.";
+            dashboardError.classList.remove("hidden");
+            setTimeout(() => dashboardError.classList.add("hidden"), 3000);
+          }
+
+          function makeSimpleBar(countMap) {
+            const entries = Object.entries(countMap).sort(
+              (a, b) => b[1] - a[1],
+            );
+            if (!entries.length) return "";
+            const max = entries[0][1] || 1;
+            return entries
+              .slice(0, 8)
+              .map(([k, v]) => {
+                const w = Math.round((v / max) * 100);
+                return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                              <div style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k}</div>
+                              <div style="width:120px;background:#eee;border-radius:6px">
+                                <div style="width:${w}%;background:linear-gradient(90deg,#e53935,#fb8c00);height:12px;border-radius:6px"></div>
+                              </div>
+                              <div style="width:40px;text-align:right">${v}</div>
+                            </div>`;
+              })
+              .join("");
+          }
+
+          const statusCounts = {};
+          const paymentCounts = {};
+          const deptCounts = {};
+          const itemCounts = {};
+          filtered.forEach((o) => {
+            statusCounts[o.status || "N/A"] =
+              (statusCounts[o.status || "N/A"] || 0) + 1;
+            paymentCounts[o.paymentMethod || "N/A"] =
+              (paymentCounts[o.paymentMethod || "N/A"] || 0) + 1;
+            const dept =
+              (o.customer && o.customer.department) || "Not provided";
+            deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+            (o.items || []).forEach((it) => {
+              itemCounts[it.name] =
+                (itemCounts[it.name] || 0) + (Number(it.quantity) || 0);
+            });
+          });
+
+          document.getElementById("chart-status").outerHTML =
+            `<div id="chart-status" class="w-full rounded p-3 bg-white">${makeSimpleBar(
+              statusCounts,
+            )}</div>`;
+          document.getElementById("chart-payment").outerHTML =
+            `<div id="chart-payment" class="w-full rounded p-3 bg-white">${makeSimpleBar(
+              paymentCounts,
+            )}</div>`;
+          document.getElementById("chart-department").outerHTML =
+            `<div id="chart-department" class="w-full rounded p-3 bg-white">${makeSimpleBar(
+              deptCounts,
+            )}</div>`;
+          document.getElementById("chart-top-items").outerHTML =
+            `<div id="chart-top-items" class="w-full rounded p-3 bg-white">${makeSimpleBar(
+              itemCounts,
+            )}</div>`;
+          // fallback histogram: simple binned bars for order totals
+          (function () {
+            const totals = filtered.map((o) => Number(o.total) || 0);
+            const bins = 8;
+            const counts = new Array(bins).fill(0);
+            const maxVal = Math.max(...totals, 0) || 1;
+            const binSize = maxVal / bins || 1;
+            totals.forEach((v) => {
+              const idx = Math.min(bins - 1, Math.floor(v / binSize));
+              counts[idx] = (counts[idx] || 0) + 1;
+            });
+            const maxCount = Math.max(...counts, 1);
+            const histHtml = counts
+              .map((c, i) => {
+                const pct = Math.round((c / maxCount) * 100);
+                const rangeStart = (i * binSize).toFixed(0);
+                const rangeEnd = Math.round((i + 1) * binSize);
+                return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:80px">${rangeStart}-${rangeEnd}</div><div style="flex:1;background:#eee;border-radius:6px;height:12px;overflow:hidden"><div style="width:${pct}%;background:linear-gradient(90deg,#e53935,#fb8c00);height:12px"></div></div><div style="width:32px;text-align:right">${c}</div></div>`;
+              })
+              .join("");
+            const histContainer = document.getElementById("chart-hist");
+            if (histContainer) {
+              histContainer.outerHTML = `<div id="chart-hist" class="w-full rounded p-3 bg-white">${histHtml}</div>`;
+            }
+          })();
+
+          // fallback department pie -> show percent bars
+          (function () {
+            const totalDept =
+              Object.values(deptCounts).reduce((s, v) => s + v, 0) || 1;
+            const deptHtml = Object.entries(deptCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 8)
+              .map(([k, v]) => {
+                const pct = Math.round((v / totalDept) * 100);
+                return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k}</div><div style="width:120px;background:#eee;border-radius:6px"><div style="width:${pct}%;background:linear-gradient(90deg,#e53935,#fb8c00);height:12px;border-radius:6px"></div></div><div style="width:40px;text-align:right">${pct}%</div></div>`;
+              })
+              .join("");
+            const pieContainer = document.getElementById(
+              "chart-department-pie",
+            );
+            if (pieContainer) {
+              pieContainer.outerHTML = `<div id="chart-department-pie" class="w-full rounded p-3 bg-white">${deptHtml}</div>`;
+            }
+          })();
+
+          const tbody = document.getElementById("orders-table-body");
+          tbody.innerHTML = "";
+          filtered.forEach((r) => {
+            const tr = document.createElement("tr");
+            const origIndex =
+              typeof r._orig_index !== "undefined" ? r._orig_index : "";
+            tr.innerHTML = `
+                    <td class="py-2 pr-4">${r.status || ""}</td>
+                    <td class="py-2 pr-4">${r.orderDate || ""}</td>
+                    <td class="py-2 pr-4">${r.paymentMethod || ""}</td>
+                    <td class="py-2 pr-4">${
+                      (r.customer && r.customer.name) || ""
+                    }</td>
+                    <td class="py-2 pr-4">${
+                      (r.customer && r.customer.phone) || ""
+                    }</td>
+                    <td class="py-2 pr-4">${
+                      (r.customer && r.customer.email) || ""
+                    }</td>
+                    <td class="py-2 pr-4">${
+                      (r.customer && r.customer.id) || ""
+                    }</td>
+                    <td class="py-2 pr-4">${
+                      (r.customer && r.customer.department) || ""
+                    }</td>
+                    <td class="py-2 pr-4">${
+                      (r.customer && r.customer.instructions) || ""
+                    }</td>
+                    <td class="py-2 pr-4">${(r.items || [])
+                      .map((it) => `${it.name} x ${it.quantity}`)
+                      .join("; ")}</td>
+                    <td class="py-2 pr-4"><button class="edit-order-btn bg-blue-600 text-white text-sm px-2 py-1 rounded" data-orig-index="${origIndex}">Edit</button></td>
+                    <td class="py-2 pr-4"><button class="delete-order-btn bg-red-600 text-white text-sm px-2 py-1 rounded" data-orig-index="${origIndex}">Delete</button></td>
+                    <td class="py-2 pr-4">₹${Number(r.total || 0).toFixed(
+                      2,
+                    )}</td>`;
+            tbody.appendChild(tr);
+          });
+
+          // Attach CSV download handler for the fallback view as well
+          if (downloadCsvBtn) {
+            downloadCsvBtn.onclick = () => {
+              const headers = [
+                "Status",
+                "Order Date",
+                "Payment",
+                "Customer",
+                "Phone",
+                "Email",
+                "ID",
+                "Department",
+                "Special Instruction",
+                "Items",
+                "Total",
+              ];
+              const rows = filtered.map((r) => {
+                const itemsStr = (r.items || [])
+                  .map((it) => {
+                    try {
+                      const name = it.name || "";
+                      const q = Number(it.quantity || 0);
+                      const unit = Number(it.unitPrice || it.price || 0);
+                      const line = Number(it.totalPrice || q * unit || 0);
+                      return `${name} x ${q} @ ₹${unit.toFixed(
+                        2,
+                      )} = ₹${line.toFixed(2)}`;
+                    } catch (e) {
+                      return "";
+                    }
+                  })
+                  .filter(Boolean)
+                  .join("; ");
+                return [
+                  r.status || "",
+                  r.orderDate || "",
+                  r.paymentMethod || "",
+                  (r.customer && r.customer.name) || "",
+                  (r.customer && r.customer.phone) || "",
+                  (r.customer && r.customer.email) || "",
+                  (r.customer && r.customer.id) || "",
+                  (r.customer && r.customer.department) || "",
+                  ((r.customer && r.customer.instructions) || "")
+                    .toString()
+                    .replace(/\n/g, " "),
+                  itemsStr,
+                  Number(r.total || 0).toFixed(2),
+                ];
+              });
+              const csv = [headers, ...rows]
+                .map((cols) =>
+                  cols
+                    .map((v) => '"' + String(v).replace(/"/g, '""') + '"')
+                    .join(","),
+                )
+                .join("\n");
+              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `canteen_orders_${
+                checkboxTodayOnly.checked ? "today" : "all"
+              }.csv`;
+              document.body.appendChild(a);
+              a.click();
+              setTimeout(() => {
+                URL.revokeObjectURL(url);
+                try {
+                  document.body.removeChild(a);
+                } catch (e) {}
+              }, 200);
+            };
+          }
+
+          dashboardContent.classList.remove("hidden");
+        }
+
+        // ----- Simple client-side auth (admin email) -----
+        const ADMIN_EMAIL = "tharun91590@gmail.com";
+        // Default admin password (change if you want) - client-side only
+        const ADMIN_PASSWORD = "admin123";
+
+        function isLoggedIn() {
+          return !!sessionStorage.getItem("user_email");
+        }
+
+        function currentUserEmail() {
+          return sessionStorage.getItem("user_email") || null;
+        }
+
+        function isAdmin() {
+          return currentUserEmail() === ADMIN_EMAIL;
+        }
+
+        function updateAuthUI() {
+          const loginBtn = document.getElementById("login-btn");
+          const logoutBtn = document.getElementById("logout-btn");
+          const dashboardButtons = [
+            document.getElementById("open-dashboard"),
+            document.getElementById("open-dashboard-mobile"),
+          ];
+          const adminOnly = [
+            document.getElementById("inspect-orders-btn"),
+            document.getElementById("import-excel-btn"),
+            document.getElementById("download-dashboard-csv"),
+            document.getElementById("refresh-dashboard"),
+            document.getElementById("export-order-btn"),
+          ];
+          if (isLoggedIn()) {
+            loginBtn.classList.add("hidden");
+            logoutBtn.classList.remove("hidden");
+            // show dashboard only for admin
+            dashboardButtons.forEach((b) => {
+              if (b) b.style.display = isAdmin() ? "inline-block" : "none";
+            });
+            adminOnly.forEach((b) => {
+              if (b) b.style.display = isAdmin() ? "inline-block" : "none";
+            });
+          } else {
+            loginBtn.classList.remove("hidden");
+            logoutBtn.classList.add("hidden");
+            dashboardButtons.forEach((b) => {
+              if (b) b.style.display = "none";
+            });
+            adminOnly.forEach((b) => {
+              if (b) b.style.display = "none";
+            });
+          }
+        }
+
+        // Create a login modal
+        const loginModalHtml = `
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[95] hidden">
+      <div class="bg-white w-full max-w-sm mx-4 rounded-xl shadow-2xl p-6">
+        <h3 class="text-lg font-bold mb-3">Sign in</h3>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input id="login-email" class="form-input" type="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input id="login-password" class="form-input" type="password" />
+        </div>
+        <div class="flex gap-3 mt-4">
+          <button id="login-submit" class="main-gradient-bg text-white font-bold py-2 px-4 rounded-lg">Sign in</button>
+          <button id="login-cancel" class="bg-gray-400 text-white font-bold py-2 px-4 rounded-lg">Cancel</button>
+        </div>
+  <!-- Admin email hidden from login modal for security -->
+      </div>
+    </div>`;
+        document.body.insertAdjacentHTML("beforeend", loginModalHtml);
+
+        document.getElementById("login-btn").addEventListener("click", () => {
+          document.getElementById("login-modal").classList.remove("hidden");
+          document.getElementById("login-email").value = "";
+          document.getElementById("login-password").value = "";
+        });
+        document
+          .getElementById("login-cancel")
+          .addEventListener("click", () => {
+            document.getElementById("login-modal").classList.add("hidden");
+          });
+        document.getElementById("logout-btn").addEventListener("click", () => {
+          sessionStorage.removeItem("user_email");
+          updateAuthUI();
+        });
+
+        document
+          .getElementById("login-submit")
+          .addEventListener("click", () => {
+            const email = document.getElementById("login-email").value.trim();
+            const pass = document.getElementById("login-password").value || "";
+            if (!email) {
+              alert("Enter email");
+              return;
+            }
+            // client-side check: admin requires correct password; other emails allowed without password
+            if (email === ADMIN_EMAIL) {
+              if (pass !== ADMIN_PASSWORD) {
+                alert("Incorrect admin password");
+                return;
+              }
+            }
+            sessionStorage.setItem("user_email", email);
+            document.getElementById("login-modal").classList.add("hidden");
+            updateAuthUI();
+          });
+
+        // Excel import handler
+        const importBtn = document.getElementById("import-excel-btn");
+        const importInput = document.getElementById("import-excel-input");
+        if (importBtn && importInput) {
+          importBtn.addEventListener("click", () => importInput.click());
+          importInput.addEventListener("change", (evt) => {
+            const f = evt.target.files && evt.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const data = new Uint8Array(e.target.result);
+                const wb = XLSX.read(data, { type: "array" });
+                const firstSheet = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, {
+                  defval: "",
+                });
+                // Map rows to order objects and append
+                const orders = loadSavedOrders();
+                rows.forEach((r) => {
+                  // Expect headers similar to export: Status, Order Date, Payment, Customer, Phone, Email, ID, Department, Special Instructions, Items, Total
+                  const order = {
+                    status:
+                      r["Order Status"] || r["Status"] || r["Status"] || "PAID",
+                    orderDate: r["Order Date"] || new Date().toLocaleString(),
+                    paymentMethod:
+                      r["Payment Method"] ||
+                      r["Payment"] ||
+                      r["paymentMethod"] ||
+                      "N/A",
+                    customer: {
+                      name:
+                        r["Customer Name"] ||
+                        r["Customer"] ||
+                        r["Customer"] ||
+                        "",
+                      phone:
+                        r["Phone Number"] || r["Phone"] || r["Phone"] || "",
+                      email: r["Email Address"] || r["Email"] || "",
+                      id: r["Student/Faculty ID"] || r["ID"] || r["id"] || "",
+                      department: r["Department"] || "",
+                      instructions:
+                        r["Special Instructions"] ||
+                        r["Special Instruction"] ||
+                        r["customer_instructions"] ||
+                        "",
+                    },
+                    items: [],
+                    total:
+                      Number(
+                        (
+                          r["Total Amount"] ||
+                          r["Total"] ||
+                          r["Total Amount"] ||
+                          r["Total"]
+                        )
+                          .toString()
+                          .replace(/[^0-9.-]+/g, ""),
+                      ) || 0,
+                  };
+                  const itemsStr =
+                    r["Items"] ||
+                    r["Items (Name x Qty @ Unit = Total; ...)"] ||
+                    r["Items"] ||
+                    "";
+                  if (itemsStr && typeof itemsStr === "string") {
+                    itemsStr
+                      .split(";")
+                      .map((s) => s.trim())
+                      .forEach((part) => {
+                        if (!part) return;
+                        // parse pattern: Name x Q @ ₹unit = ₹line
+                        const m = part.match(
+                          /^(.*?)\s*x\s*(\d+)\s*@\s*₹?([0-9.,]+)\s*=\s*₹?([0-9.,]+)/,
+                        );
+                        if (m) {
+                          const name = m[1].trim();
+                          const qty = Number(m[2]);
+                          const unit = Number(m[3].replace(/,/g, ""));
+                          const line = Number(m[4].replace(/,/g, ""));
+                          order.items.push({
+                            name,
+                            quantity: qty,
+                            unitPrice: unit,
+                            totalPrice: line,
+                          });
+                        } else {
+                          // fallback: try "Name x Q"
+                          const m2 = part.match(/^(.*?)\s*x\s*(\d+)/);
+                          if (m2) {
+                            const name = m2[1].trim();
+                            const qty = Number(m2[2]);
+                            order.items.push({
+                              name,
+                              quantity: qty,
+                              unitPrice: 0,
+                              totalPrice: 0,
+                            });
+                          }
+                        }
+                      });
+                  }
+                  orders.push(order);
+                });
+                saveOrders(orders);
+                alert("Imported " + rows.length + " rows");
+                renderDashboard();
+              } catch (err) {
+                console.error("Import failed", err);
+                alert("Failed to import file. See console for details.");
+              }
+            };
+            reader.readAsArrayBuffer(f);
+          });
+        }
+
+        // Initialize auth UI on load
+        updateAuthUI();
+
+        // ----- Order edit handlers -----
+        function openOrderEditModal(origIndex) {
+          if (typeof origIndex !== "number" || origIndex < 0) return;
+          const orders = loadSavedOrders();
+          if (!orders || !orders[origIndex]) return;
+          const order = JSON.parse(JSON.stringify(orders[origIndex]));
+          document.getElementById("edit-order-orig-index").value =
+            String(origIndex);
+          document.getElementById("edit-customer-name").value =
+            order.customer?.name || "";
+          document.getElementById("edit-customer-phone").value =
+            order.customer?.phone || "";
+          document.getElementById("edit-customer-email").value =
+            order.customer?.email || "";
+          document.getElementById("edit-customer-id").value =
+            order.customer?.id || "";
+          document.getElementById("edit-customer-department").value =
+            order.customer?.department || "";
+          document.getElementById("edit-customer-instructions").value =
+            order.customer?.instructions || "";
+
+          const itemsList = document.getElementById("edit-items-list");
+          itemsList.innerHTML = "";
+          (order.items || []).forEach((it, idx) => {
+            const row = document.createElement("div");
+            row.className = "flex items-center gap-2";
+            row.innerHTML = `
+                    <div class="flex-1">
+                      <div class="font-semibold">${it.name}</div>
+                      <div class="text-xs text-gray-500">₹${Number(
+                        it.unitPrice || it.price || 0,
+                      ).toFixed(2)}</div>
+                    </div>
+                    <div style="width:90px">
+                      <input type="number" min="0" step="1" data-item-idx="${idx}" class="form-input edit-item-qty" value="${Number(
+                        it.quantity || 0,
+                      )}" />
+                    </div>
+                    <div>
+                      <button type="button" class="remove-edit-item bg-red-500 text-white px-2 py-1 rounded" data-item-idx="${idx}">Remove</button>
+                    </div>
+                  `;
+            itemsList.appendChild(row);
+          });
+
+          document
+            .getElementById("order-edit-modal")
+            .classList.remove("hidden");
+        }
+
+        function closeOrderEditModal() {
+          document.getElementById("order-edit-modal").classList.add("hidden");
+        }
+
+        document.addEventListener("click", (e) => {
+          const btn = e.target.closest(".edit-order-btn");
+          if (btn) {
+            const idx = Number(btn.dataset.origIndex);
+            openOrderEditModal(idx);
+            return;
+          }
+          const delBtn = e.target.closest(".delete-order-btn");
+          if (delBtn) {
+            const idx = Number(delBtn.dataset.origIndex);
+            if (isNaN(idx)) return;
+            if (!confirm("Delete this order?")) return;
+            try {
+              const orders = loadSavedOrders();
+              if (orders && typeof orders[idx] !== "undefined") {
+                orders.splice(idx, 1);
+                saveOrders(orders);
+                // close edit modal if it's open for this order
+                const currentEditIdx = Number(
+                  document.getElementById("edit-order-orig-index").value || -1,
+                );
+                if (!isNaN(currentEditIdx) && currentEditIdx === idx)
+                  closeOrderEditModal();
+                dashboardError.textContent = `Order deleted.`;
+                dashboardError.classList.remove("hidden");
+                setTimeout(() => dashboardError.classList.add("hidden"), 3000);
+                renderDashboard();
+              }
+            } catch (e) {
+              console.error("Failed to delete order", e);
+              alert("Failed to delete order. See console for details.");
+            }
+            return;
+          }
+          const removeBtn = e.target.closest(".remove-edit-item");
+          if (removeBtn) {
+            const itemIdx = Number(removeBtn.dataset.itemIdx);
+            const itemsList = document.getElementById("edit-items-list");
+            // remove the corresponding element and mark as removed by removing node
+            const el = removeBtn.closest("div.flex.items-center");
+            if (el) el.remove();
+            return;
+          }
+        });
+
+        document
+          .getElementById("close-order-edit")
+          .addEventListener("click", closeOrderEditModal);
+        document
+          .getElementById("cancel-order-edit")
+          .addEventListener("click", closeOrderEditModal);
+
+        document
+          .getElementById("save-order-edit")
+          .addEventListener("click", () => {
+            const origIdx = Number(
+              document.getElementById("edit-order-orig-index").value,
+            );
+            if (isNaN(origIdx) || origIdx < 0) return;
+            const orders = loadSavedOrders();
+            if (!orders || !orders[origIdx]) return;
+            const order = orders[origIdx];
+            // update customer
+            order.customer = order.customer || {};
+            order.customer.name =
+              document.getElementById("edit-customer-name").value || "";
+            order.customer.phone =
+              document.getElementById("edit-customer-phone").value || "";
+            order.customer.email =
+              document.getElementById("edit-customer-email").value || "";
+            order.customer.id =
+              document.getElementById("edit-customer-id").value || "";
+            order.customer.department =
+              document.getElementById("edit-customer-department").value || "";
+            order.customer.instructions =
+              document.getElementById("edit-customer-instructions").value || "";
+
+            // update items quantities based on current DOM
+            const itemsContainer = document.getElementById("edit-items-list");
+            const qtyInputs = itemsContainer.querySelectorAll(".edit-item-qty");
+            const newItems = [];
+            qtyInputs.forEach((inp) => {
+              const itemIdx = Number(inp.dataset.itemIdx);
+              const qty = Number(inp.value) || 0;
+              // original item at that index in the saved order
+              const origItem = (order.items || [])[itemIdx];
+              if (!origItem) return;
+              if (qty <= 0) return; // removed or zeroed
+              const unit = Number(origItem.unitPrice || origItem.price || 0);
+              newItems.push({
+                id: origItem.id,
+                name: origItem.name,
+                quantity: qty,
+                unitPrice: unit,
+                totalPrice: qty * unit,
+              });
+            });
+            order.items = newItems;
+            order.total = newItems.reduce(
+              (s, it) => s + (Number(it.totalPrice) || 0),
+              0,
+            );
+
+            // persist
+            try {
+              orders[origIdx] = order;
+              saveOrders(orders);
+              closeOrderEditModal();
+              // refresh dashboard UI
+              renderDashboard();
+            } catch (e) {
+              console.error("Failed to save edited order", e);
+              alert("Failed to save order changes. See console for details.");
+            }
+          });
+      });
+    </script>
+  </body>
+</html>
